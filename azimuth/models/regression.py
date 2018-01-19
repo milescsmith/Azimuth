@@ -272,7 +272,7 @@ def set_up_inner_folds(learn_options, y):
     label_encoder.fit(y['Target gene'].values)    
     gene_classes = label_encoder.transform(y['Target gene'].values)
     n_genes = len(np.unique(gene_classes))    
-    if learn_options['ignore_gene_level_for_inner_loop'] or learn_options["cv"] == "stratified" or n_genes==1:
+    if ('ignore_gene_level_for_inner_loop' in learn_options and learn_options['ignore_gene_level_for_inner_loop']) or learn_options["cv"] == "stratified" or n_genes==1:
         if 'n_folds' not in learn_options.keys():
             n_splits = len(np.unique(gene_classes))
         else:
