@@ -470,7 +470,7 @@ def save_final_model_V3(filename=None, include_position=True, learn_options=None
     results, all_learn_options = run_models(["AdaBoost"], orders=[2], adaboost_learning_rates=[0.1],
                                             adaboost_max_depths=[3], adaboost_num_estimators=[100],
                                             learn_options_set=learn_options_set,
-                                            test=test, CV=False, pam_audit=length_audit, length_audit=length_audit)
+                                            test=test, CV=False, pam_audit=pam_audit, length_audit=length_audit)
     model = results.values()[0][3][0]
 
     with open(filename, 'wb') as f:
