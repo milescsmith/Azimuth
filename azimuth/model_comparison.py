@@ -436,60 +436,35 @@ def save_final_model_V3(filename=None, include_position=True, learn_options=None
     assert filename is not None, "need to provide filename to save final model"
 
     if learn_options is None:
+        learn_options = {
+            'V': 3,
+            'train_genes': azimuth.load_data.get_V3_genes(),
+            'test_genes': azimuth.load_data.get_V3_genes(),
+            'testing_non_binary_target_name': 'ranks',
+            'include_pi_nuc_feat': True,
+            'gc_features': True,
+            'nuc_features': True,
+            'include_gene_position': False,
+            'include_NGGX_interaction': True,
+            'include_Tm': True,
+            'include_strand': False,
+            'include_gene_feature': False,
+            'include_gene_guide_feature': 0,
+            'extra pairs': False,
+            'weighted': None,
+            'training_metric': 'spearmanr',
+            'NDGC_k': 10,
+            'cv': 'gene',
+            'include_gene_effect': False,
+            'include_drug': False,
+            'include_sgRNAscore': False,
+            'adaboost_loss' : 'ls', # main 'ls', alternatives: 'lad', 'huber', 'quantile', see scikit docs for details
+            'adaboost_alpha': 0.5, # this parameter is only used by the huber and quantile loss functions.
+            'normalize_features': False,
+            'adaboost_CV' : False,
+        }
         if include_position:
-            learn_options = {"V": 3,
-                        'train_genes': azimuth.load_data.get_V3_genes(),
-                        'test_genes': azimuth.load_data.get_V3_genes(),
-                        "testing_non_binary_target_name": 'ranks',
-                        'include_pi_nuc_feat': True,
-                        "gc_features": True,
-                        "nuc_features": True,
-                        "include_gene_position": True,
-                        "include_NGGX_interaction": True,
-                        "include_Tm": True,
-                        "include_strand": False,
-                        "include_gene_feature": False,
-                        "include_gene_guide_feature": 0,
-                        "extra pairs": False,
-                        "weighted": None,
-                        "training_metric": 'spearmanr',
-                        "NDGC_k": 10,
-                        "cv": "gene",
-                        "include_gene_effect": False,
-                        "include_drug": False,
-                        "include_sgRNAscore": False,
-                        'adaboost_loss' : 'ls', # main "ls", alternatives: "lad", "huber", "quantile", see scikit docs for details
-                        'adaboost_alpha': 0.5, # this parameter is only used by the huber and quantile loss functions.
-                        'normalize_features': False,
-                        'adaboost_CV' : False
-                        }
-        else:
-            learn_options = {"V": 3,
-                'train_genes': azimuth.load_data.get_V3_genes(),
-                'test_genes': azimuth.load_data.get_V3_genes(),
-                "testing_non_binary_target_name": 'ranks',
-                'include_pi_nuc_feat': True,
-                "gc_features": True,
-                "nuc_features": True,
-                "include_gene_position": False,
-                "include_NGGX_interaction": True,
-                "include_Tm": True,
-                "include_strand": False,
-                "include_gene_feature": False,
-                "include_gene_guide_feature": 0,
-                "extra pairs": False,
-                "weighted": None,
-                "training_metric": 'spearmanr',
-                "NDGC_k": 10,
-                "cv": "gene",
-                "include_gene_effect": False,
-                "include_drug": False,
-                "include_sgRNAscore": False,
-                'adaboost_loss' : 'ls', # main "ls", alternatives: "lad", "huber", "quantile", see scikit docs for details
-                'adaboost_alpha': 0.5, # this parameter is only used by the huber and quantile loss functions.
-                'normalize_features': False,
-                 'adaboost_CV' : False
-                }
+            learn_options['include_gene_position'] = True
 
     learn_options_set = {short_name: learn_options}
     results, all_learn_options = run_models(["AdaBoost"], orders=[2], adaboost_learning_rates=[0.1],
