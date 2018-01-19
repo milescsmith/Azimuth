@@ -2,7 +2,6 @@ import numpy as np
 import sklearn
 from sklearn.metrics import roc_curve, auc
 import sklearn.metrics
-import sklearn.cross_validation
 import copy
 import util
 import time
@@ -169,13 +168,14 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, train_ge
         label_encoder.fit(y_all['Target gene'].values)
         gene_classes = label_encoder.transform(y_all['Target gene'].values)
         if 'n_folds' in learn_options.keys():
-            n_folds = learn_options['n_folds']
+            n_splits = learn_options['n_folds']
         elif learn_options['train_genes'] is not None and learn_options["test_genes"] is not None:
-            n_folds = len(learn_options["test_genes"])
+            n_splits = len(learn_options["test_genes"])
         else:
-            n_folds = len(learn_options['all_genes'])
+            n_splits = len(learn_options['all_genes'])
 
-        cv = sklearn.cross_validation.StratifiedKFold(gene_classes, n_folds=n_folds, shuffle=True)
+        skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+        cv = skf.split(np.zeros(len(gene_classes), dtype = np.bool), gene_classes)
         fold_labels = ["fold%d" % i for i in range(1,n_folds+1)]
         if learn_options['num_genes_remove_train'] is not None:
             raise NotImplementedException()

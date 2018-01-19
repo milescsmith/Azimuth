@@ -26,14 +26,15 @@ def DNN_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_optio
                 label_encoder = sklearn.preprocessing.LabelEncoder()
                 label_encoder.fit(y_all['Target gene'].values[train])
                 gene_classes = label_encoder.transform(y_all['Target gene'].values[train])
-                n_folds = len(np.unique(gene_classes))
-                cv = sklearn.cross_validation.StratifiedKFold(gene_classes, n_folds=n_folds, shuffle=True)
+                n_splits = len(np.unique(gene_classes))
+                skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+                cv = skf.split(np.zeros(len(gene_classes), dtype = np.bool), gene_classes)
             elif learn_options["cv"]=="gene":
                 gene_list = np.unique(y_all['Target gene'].values[train])
                 cv = []
                 for gene in gene_list:
                     cv.append(get_train_test(gene, y_all[train]))
-                n_folds = len(cv)
+                n_splits = len(cv)
 
 
             for train_ind, valid_ind in cv:
@@ -58,7 +59,7 @@ def DNN_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_optio
 
                 accuracies[i, j] += sp.stats.spearmanr(pred.flatten(), y_train[valid_ind].flatten())[0]
 
-            accuracies[i, j] = accuracies[i, j]/float(n_folds)
+            accuracies[i, j] = accuracies[i, j]/float(n_splits)
 
 
             if best_score is None or accuracies[i, j] > best_score:
