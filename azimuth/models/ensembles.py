@@ -1,7 +1,7 @@
 import numpy as np
 import sklearn.linear_model
 import sklearn.ensemble as en
-from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 import sklearn
 from sklearn.linear_model import LinearRegression
 import scipy as sp
@@ -9,7 +9,6 @@ from regression import linreg_on_fold
 import sklearn
 import sklearn.tree as tree
 from sklearn import svm
-from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import cross_val_score
 
 def spearman_scoring(clf, X, y):
@@ -78,7 +77,6 @@ def adaboost_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_
                  n_jobs = 20
 
                  print "Adaboost with GridSearch"
-                 from sklearn.grid_search import GridSearchCV
                  param_grid = {'learning_rate': [0.1, 0.05, 0.01],
                               'max_depth': [4, 5, 6, 7],
                               'min_samples_leaf': [5, 7, 10, 12, 15],
