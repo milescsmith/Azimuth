@@ -189,8 +189,10 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
     # assert degenerate_pred[max_score_ind[0][0]]==0, "found degenerate predictions at max score"
 
     # in the unlikely event of tied scores, take the first one.
-    if len(max_score_ind[0]) > 1:
-        max_score_ind = [max_score_ind[0][0], max_score_ind[1][0]]
+    # we take the first one regardless because a change in NumPy made it an
+    # error to use a single-value ndarray as an array index:
+    # https://stackoverflow.com/questions/42128830/typeerror-only-integer-scalar-arrays-can-be-converted-to-a-scalar-index/42444003#42444003
+    max_score_ind = [max_score_ind[0][0], max_score_ind[1][0]]
 
     best_alpha, best_l1r = learn_options["alpha"][max_score_ind[0]], l1_ratio[max_score_ind[1]]
 
