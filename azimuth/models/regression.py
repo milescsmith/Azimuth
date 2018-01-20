@@ -27,11 +27,11 @@ def train_linreg_model(alpha, l1r, learn_options, fold, X, y, y_all):
         clf.fit(X[fold], y[fold], sample_weight=weights)
     elif learn_options["penalty"] == 'EN' or learn_options["penalty"] == 'L1':
         if learn_options["loss"] == "squared":
-            clf = sklearn.linear_model.ElasticNet(alpha=alpha, l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], normalize=learn_options['normalize_features'], max_iter=3000)
+            clf = sklearn.linear_model.ElasticNet(alpha=alpha, l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], normalize=learn_options['normalize_features'], max_iter=30000)
         elif learn_options["loss"] == "huber":
             clf = sklearn.linear_model.SGDRegressor('huber', epsilon=0.7, alpha=alpha,
                                                     l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], n_iter=10,
-                                                    penalty='elasticnet', shuffle=True, normalize=learn_options['normalize_features'])
+                                                    penalty='elasticnet', shuffle=True, normalize=learn_options['normalize_features'], max_iter=30000)
         clf.fit(X[fold], y[fold])
     return clf
 
