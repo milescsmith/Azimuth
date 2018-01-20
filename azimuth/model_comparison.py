@@ -2,6 +2,7 @@ import azimuth.predict as pd
 import copy
 import os
 import numpy as np
+from math import log10
 import azimuth.util
 import shutil
 import pickle
@@ -62,7 +63,7 @@ def L1_setup(learn_options, set_target_fn=set_target):
     learn_options["penalty"] = "L1"
     learn_options["feature_select"] = False
     if "alpha" not in learn_options.keys():
-        learn_options["alpha"] = np.array([1e-6*pow(1.3,x) for x in range(0,100)])
+        learn_options["alpha"] = np.logspace(-5, log10(1.5e5), num = 100)
     learn_options["loss"] = "squared"
 
     return learn_options
@@ -73,7 +74,7 @@ def L2_setup(learn_options, set_target_fn=set_target):
     learn_options["penalty"] = "L2"
     learn_options["feature_select"] = False
     if "alpha" not in learn_options.keys():
-        learn_options["alpha"] = np.array([1e-6*pow(1.3,x) for x in range(0,100)])
+        learn_options["alpha"] = np.logspace(-5, log10(1.5e5), num = 100)
     learn_options["loss"] = "squared"
 
     return learn_options
@@ -137,7 +138,7 @@ def logregL1_setup(learn_options, set_target_fn=set_target):
     learn_options["penalty"] = "L1"
     learn_options["feature_select"] = False
     if "alpha" not in learn_options.keys():
-        learn_options["alpha"] = np.array([1e-6*pow(1.3,x) for x in range(0,100)])
+        learn_options["alpha"] = np.logspace(-5, log10(1.5e5), num = 100)
     if not learn_options.has_key("fit_intercept"):
         learn_options["fit_intercept"] = True
     return learn_options
@@ -148,7 +149,7 @@ def LASSOs_ensemble_setup(learn_options, set_target_fn=set_target):
     learn_options["penalty"] = "L1"
     learn_options["feature_select"] = False
     if "alpha" not in learn_options.keys():
-        learn_options["alpha"] = np.array([1e-6*pow(1.3,x) for x in range(0,100)])
+        learn_options["alpha"] = np.logspace(-5, log10(1.5e5), num = 100)
     learn_options["loss"] = "squared"
 
     return learn_options
