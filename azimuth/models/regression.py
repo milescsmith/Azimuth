@@ -33,6 +33,11 @@ def train_linreg_model(alpha, l1r, learn_options, fold, X, y, y_all):
                                                     l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], n_iter=10,
                                                     penalty='elasticnet', shuffle=True, normalize=learn_options['normalize_features'], max_iter=30000)
         clf.fit(X[fold], y[fold])
+    elif learn_options['penalty'] is None:
+        clf = sklearn.linear_model.LinearRegression(fit_intercept = learn_options['fit_intercept'],
+                                                    normalize = learn_options['normalize_features'],
+                                                    copy_X = True)
+        clf.fit(X[fold], y[fold])
     return clf
 
 
@@ -132,7 +137,7 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
 
     cv, n_folds = set_up_inner_folds(learn_options, y_all.iloc[train])
 
-    if learn_options['penalty'] == "L1":
+    if learn_options['penalty'] == "L1" or learn_options['penalty'] is None:
         l1_ratio = [1.0]
     elif learn_options['penalty'] == "L2":
         l1_ratio = [0.0]
@@ -214,7 +219,7 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
     else:
         y_pred = clf.predict(X[test])
 
-    if learn_options["penalty"] != "L2":
+    if learn_options["penalty"] != "L2" and learn_options["penalty"] is not None:
         y_pred = y_pred[:, None]
             
     return y_pred, clf

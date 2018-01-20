@@ -53,7 +53,7 @@ def construct_filename(learn_options, TEST):
         #     filename += "d%d" % learn_options['degree']
         # if learn_options['warped']:
         #     filename += ".Warp"
-    elif learn_options["method"] == "linreg":
+    elif learn_options["method"] == "linreg" and learn_options["penalty"] is not None:
         filename += "." + learn_options["penalty"]
     filename += "." + learn_options["cv"]
 

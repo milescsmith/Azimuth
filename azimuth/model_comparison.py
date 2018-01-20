@@ -123,7 +123,7 @@ def sgrna_from_doench_setup(learn_options, set_target_fn=set_target):
 
 def linreg_setup(learn_options, set_target_fn=set_target):
     learn_options["method"] = "linreg"
-    learn_options["penalty"] = "L1"
+    learn_options["penalty"] = None
     learn_options["feature_select"] = False
     if "alpha" not in learn_options.keys():
         learn_options["alpha"] = np.array([0.0])
