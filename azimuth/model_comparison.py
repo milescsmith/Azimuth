@@ -163,7 +163,7 @@ def xu_et_al_setup(learn_options, set_target_fn=set_target):
 def adaboost_setup(learn_options, num_estimators=100, max_depth=3, learning_rate=0.1, set_target_fn=set_target, model="AdaBoost"):
     """
     """
-    learn_options = set_target_fn(learn_options, classification=False)
+    learn_options = set_target_fn(learn_options, classification = (model == 'AdaBoostClassifier'))
     if model=="AdaBoost":
         learn_options['method'] = "AdaBoostRegressor"
     elif model=="AdaBoostClassifier":
