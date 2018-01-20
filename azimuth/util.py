@@ -25,6 +25,7 @@ import util
 import sys
 import pandas as pd
 import corrstats
+import warnings
 
 def qqplot(pvals, fileout = None, alphalevel = 0.05,legend=None,xlim=None,ylim=None,fixaxes=True,addlambda=True,minpval=1e-20,title=None,h1=None,figsize=[5,5],grid=True, markersize=2):
     '''
@@ -377,13 +378,13 @@ def extract_individual_level_data(one_result):
 
 def spearmanr_nonan(x,y):
     '''
-    same as scipy.stats.spearmanr, but if all values are unique, returns 0 instead of nan
+    same as scipy.stats.spearmanr, but if all values are equal, returns 0 instead of nan
     (Output: rho, pval)
     '''
     r, p = st.spearmanr(x, y)
     if np.isnan(p):
         if len(np.unique(x))==1 or len(np.unique(y))==1:
-            print "WARNING: spearmanr is nan due to unique values, setting to 0"
+            warnings.warn('spearmanr is nan due to equal values, setting to 0')
             p = 0.0
             r = 0.0
         else:
