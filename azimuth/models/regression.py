@@ -60,7 +60,7 @@ def logreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
     # degenerate_pred = np.zeros((len(learn_options["alpha"])))
     for train_inner, test_inner in cv:
         for i, alpha in enumerate(learn_options["alpha"]):
-            clf = sklearn.linear_model.LogisticRegression(penalty=learn_options['penalty'].lower(), dual=False, fit_intercept=learn_options["fit_intercept"], class_weight=learn_options["class_weight"], tol=tol, C=1.0/alpha)
+            clf = sklearn.linear_model.LogisticRegression(penalty=learn_options['penalty'].lower(), dual=False, fit_intercept=learn_options["fit_intercept"], class_weight=(learn_options["class_weight"] if 'class_weight' in learn_options else None), tol=tol, C=1.0/alpha)
             
             clf.fit(X[train][train_inner], y[train][train_inner].flatten())
             #tmp_pred = clf.predict(X[train][test_inner])
