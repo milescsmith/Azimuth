@@ -462,16 +462,20 @@ def save_final_model_V3(filename=None, include_position=True, learn_options=None
             'adaboost_loss' : 'ls', # main 'ls', alternatives: 'lad', 'huber', 'quantile', see scikit docs for details
             'adaboost_alpha': 0.5, # this parameter is only used by the huber and quantile loss functions.
             'normalize_features': False,
-            'adaboost_CV' : False,
+            'adaboost_CV' : False
         }
         if include_position:
             learn_options['include_gene_position'] = True
 
     learn_options_set = {short_name: learn_options}
-    results, all_learn_options = run_models(["AdaBoost"], orders=[2], adaboost_learning_rates=[0.1],
+    results, all_learn_options = run_models(["AdaBoost", "RandomForest", "linreg", "L2", "L1"],
+                                            orders=[2], adaboost_learning_rates=[0.1],
                                             adaboost_max_depths=[3], adaboost_num_estimators=[100],
                                             learn_options_set=learn_options_set,
-                                            test=test, CV=False, pam_audit=pam_audit, length_audit=length_audit)
+                                            test=test, CV=True, pam_audit=pam_audit, length_audit=length_audit)
+    all_metrics, gene_names = azimuth.util.get_all_metrics(results, all_learn_options)
+    azimuth.util.plot_all_metrics(all_metrics, gene_names, all_learn_options, save=True)
+    exit()
     model = results.values()[0][3][0]
 
     with open(filename, 'wb') as f:

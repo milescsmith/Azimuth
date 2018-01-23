@@ -974,7 +974,7 @@ def plot_all_metrics(metrics, gene_names, all_learn_options, save, plots=None, b
     if save==True:
         first_key = all_learn_options.keys()[0]
         #basefile = r"..\results\V%s_trmetric%s_%s" % (all_learn_options[first_key]["V"], all_learn_options[first_key]["training_metric"], datestamp())
-        basefile = r"..\results\%s" % (first_key)
+        basefile = r"../results/%s" % (first_key)
 
         d = os.path.dirname(basefile)
         if not os.path.exists(d):
