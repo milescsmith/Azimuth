@@ -1,33 +1,32 @@
 import numpy as np
-from ssk_cython import *
 
-def weighted_degree_kxx(x, xp, d):
+
+def weighted_degree_kxx(x: int, xp: int, d: int) -> int:
     assert len(x) == len(xp)
-    l = len(x)
-    sim = 0
+    l: int = len(x)
+    sim: int = 0
 
     for k in range(1, d):
-        beta_k = 2*(d-k+1)/float((d*(d+1)))
+        beta_k = 2 * (d - k + 1) / float((d * (d + 1)))
         sim_k = 0
-        for i in range(1, l-k+1):
-            if x[i:i+k] == xp[i:i+k]:
+        for i in range(1, l - k + 1):
+            if x[i:i + k] == xp[i:i + k]:
                 sim_k += 1.
         sim += beta_k * sim_k
 
     return sim
 
-def WD_K(sequences, d=4, cython=False):
+
+def WD_K(sequences, d: int = 4) -> np.ndarray:
     num_sequences = len(sequences)
     K = np.zeros((num_sequences, num_sequences))
 
     for i in range(num_sequences):
         for j in range(num_sequences):
-            if cython:
-                K[i, j] = cython_weighted_degree_kxx(sequences[i], sequences[j], d=d)
-            else:
-                K[i, j] = weighted_degree_kxx(sequences[i], sequences[j], d=d)
+            K[i, j] = weighted_degree_kxx(sequences[i], sequences[j], d=d)
 
     return K
+
 
 if __name__ == '__main__':
     x1 = 'ATCGATCG'

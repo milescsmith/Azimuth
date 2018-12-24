@@ -1,71 +1,100 @@
 import numpy as np
 import sklearn
-from sklearn.linear_model import ARDRegression, LinearRegression
+import scipy.stats as st
+from numpy.core.multiarray import ndarray
+from sklearn import linear_model
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_curve, auc
-import sklearn.linear_model
-import azimuth.util
-import azimuth.metrics as ranking_metrics
+from azimuth.util import spearmanr_nonan
+from azimuth.metrics import rank_data, ndcg_at_k_ties
 import azimuth.predict
 import numbers
 
-def ARDRegression_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_options):
+from glmnet_python import glmnet
+
+
+def ARDRegression_on_fold(train, test, y, X):
     '''
     '''
-    clf = ARDRegression()
+    clf = linear_model.ARDRegression()
     clf.fit(X[train], y[train][:, 0])
     y_pred = clf.predict(X[test])[:, None]
     return y_pred, clf
 
 
 def train_linreg_model(alpha, l1r, learn_options, fold, X, y, y_all):
-    '''
+    """
     fold is something like train_inner (boolean array specifying what is in the fold)
-    '''
+    """
     if learn_options["penalty"] == "L2":
-        clf = sklearn.linear_model.Ridge(alpha=alpha, fit_intercept=learn_options["fit_intercept"], normalize=learn_options['normalize_features'], copy_X=True, max_iter=None, tol=0.001, solver='auto')
+        clf = linear_model.Ridge(alpha=alpha,
+                                 fit_intercept=learn_options["fit_intercept"],
+                                 normalize=learn_options['normalize_features'],
+                                 copy_X=True,
+                                 max_iter=None,
+                                 tol=0.001,
+                                 solver='auto')
         weights = get_weights(learn_options, fold, y, y_all)
         clf.fit(X[fold], y[fold], sample_weight=weights)
     elif learn_options["penalty"] == 'EN' or learn_options["penalty"] == 'L1':
         if learn_options["loss"] == "squared":
-            clf = sklearn.linear_model.ElasticNet(alpha=alpha, l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], normalize=learn_options['normalize_features'], max_iter=30000)
+            clf = linear_model.ElasticNet(alpha=alpha,
+                                          l1_ratio=l1r,
+                                          fit_intercept=learn_options["fit_intercept"],
+                                          normalize=learn_options['normalize_features'],
+                                          # max_iter=30000,
+                                          warm_start=True)
         elif learn_options["loss"] == "huber":
-            clf = sklearn.linear_model.SGDRegressor('huber', epsilon=0.7, alpha=alpha,
-                                                    l1_ratio=l1r, fit_intercept=learn_options["fit_intercept"], n_iter=10,
-                                                    penalty='elasticnet', shuffle=True, normalize=learn_options['normalize_features'], max_iter=30000)
+            clf = linear_model.SGDRegressor('huber',
+                                            alpha=alpha,
+                                            l1_ratio=l1r,
+                                            fit_intercept=learn_options["fit_intercept"],
+                                            n_iter=10,
+                                            penalty='elasticnet',
+                                            shuffle=True,
+                                            max_iter=30000)
+        # print(f"Fitting X:{X} and y:{y}")  # TODO: remove after DEBUG
         clf.fit(X[fold], y[fold])
     elif learn_options['penalty'] is None:
-        clf = sklearn.linear_model.LinearRegression(fit_intercept = learn_options['fit_intercept'],
-                                                    normalize = learn_options['normalize_features'],
-                                                    copy_X = True)
+        clf = linear_model.LinearRegression(fit_intercept=learn_options['fit_intercept'],
+                                            normalize=learn_options['normalize_features'],
+                                            copy_X=True)
+        # print(f"Fitting X:{X} and y:{y}")  # TODO: remove after DEBUG
         clf.fit(X[fold], y[fold])
     return clf
 
 
-def logreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_options):
+def logreg_on_fold(train, test, y, y_all, X, learn_options):
     '''
     (L1/L2 penalized) logistic reggresion using scikitlearn
     '''
 
     assert len(np.unique(y)) <= 2, "if using logreg need binary targets"
     assert learn_options["weighted"] is None, "cannot do weighted Log reg"
-    assert learn_options['feature_select'] is False, "cannot do feature selection yet in logistic regression--see linreg_on_fold to implement"
-    
+    assert learn_options[
+               'feature_select'] is False, "cannot do feature selection yet in logistic regression--see linreg_on_fold to implement"
+
     cv, n_folds = set_up_inner_folds(learn_options, y_all.iloc[train])
 
-    assert learn_options['penalty'] == "L1" or learn_options['penalty'] == "L2", "can only use L1 or L2 with logistic regression"
-    
-    tol = 0.00001#0.0001
-    
-    performance = np.zeros((len(learn_options["alpha"]), 1))
-    # degenerate_pred = np.zeros((len(learn_options["alpha"])))
+    assert learn_options['penalty'] == "L1" or learn_options[
+        'penalty'] == "L2", "can only use L1 or L2 with logistic regression"
+
+    tol = 0.00001
+
+    performance: ndarray = np.zeros((len(learn_options["alpha"]), 1))
     for train_inner, test_inner in cv:
         for i, alpha in enumerate(learn_options["alpha"]):
-            clf = sklearn.linear_model.LogisticRegression(penalty=learn_options['penalty'].lower(), dual=False, fit_intercept=learn_options["fit_intercept"], class_weight=(learn_options["class_weight"] if 'class_weight' in learn_options else None), tol=tol, C=1.0/alpha)
-            
+            clf: LogisticRegression = linear_model.LogisticRegression(penalty=learn_options['penalty'].lower(),
+                                                                      dual=False,
+                                                                      fit_intercept=learn_options["fit_intercept"],
+                                                                      class_weight=(learn_options[
+                                                                                        "class_weight"] if 'class_weight' in learn_options else None),
+                                                                      tol=tol,
+                                                                      C=1.0 / alpha)
+
             clf.fit(X[train][train_inner], y[train][train_inner].flatten())
-            #tmp_pred = clf.predict(X[train][test_inner])
-            tmp_pred = clf.predict_proba(X[train][test_inner])[:,1]
-            
+            tmp_pred = clf.predict_proba(X[train][test_inner])[:, 1]
+
             if learn_options["training_metric"] == "AUC":
                 fpr, tpr, _ = roc_curve(y_all[learn_options["ground_truth_label"]][train][test_inner], tmp_pred)
                 assert ~np.any(np.isnan(fpr)), "found nan fpr"
@@ -90,49 +119,41 @@ def logreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
     if not isinstance(best_alpha, numbers.Number):
         raise Exception("best_alpha must be a number but is %s" % type(best_alpha))
 
-    print "\t\tbest alpha is %f from range=%s" % (best_alpha, learn_options["alpha"][[0, -1]])
+    print("\tbest alpha is {} from range={}".format(best_alpha, learn_options['alpha'][[0, -1]]))
     max_perf = np.nanmax(performance)
 
     if max_perf < 0.0:
         raise Exception("performance is negative")
 
-    print "\t\tbest performance is %f" % np.nanmax(performance)
+    print("\t\tbest performance is {}".format(np.nanmax(performance)))
 
-    clf = sklearn.linear_model.LogisticRegression(penalty=learn_options['penalty'],
-                                                  dual=False, fit_intercept=learn_options["fit_intercept"],             class_weight=learn_options["class_weight"], tol=tol, C=1.0/best_alpha)
+    clf = linear_model.LogisticRegression(penalty=learn_options['penalty'],
+                                          dual=False,
+                                          fit_intercept=learn_options["fit_intercept"],
+                                          class_weight=learn_options["class_weight"],
+                                          tol=tol,
+                                          C=1.0 / best_alpha)
     clf.fit(X[train], y[train].flatten())
 
-    # debugging check that get samed paramter estimation when have no regularization and use 
-    # either data with only that feature on, or all data), AND WITH NO INTERCEPT
-    if False:        
-        # grab only feature "GA3"        
-        keep_ind = np.where(feature_sets['mutletpos'].columns=="GA3")[0]
-        print "%s, %s" % (str(clf.intercept_ ), str(clf.coef_[0, keep_ind]))
-        clf.fit(X[train][:,keep_ind], y[train].flatten())
-        print "%s, %s" % (str(clf.intercept_ ), str(clf.coef_))
-        import ipdb; ipdb.set_trace()               
+    y_pred = clf.predict_proba(X[test])[:, 1]
+    y_pred = y_pred[:, None]
 
-    
-    #y_pred = clf.predict(X[test])
-    y_pred = clf.predict_proba(X[test])[:,1]
-    y_pred = y_pred[:, None]    
-    #fpr, tpr, _ = roc_curve(y, y_pred); tmp_auc = auc(fpr, tpr)
-    #import ipdb; ipdb.set_trace()
     return y_pred, clf
 
 
-def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_options):
+def linreg_on_fold(train, test, y, y_all, X, learn_options):
     '''
     linreg using scikitlearn, using more standard regression models with penalization requiring
     nested-cross-validation
     '''
 
-    if learn_options["weighted"] is not None and (learn_options["penalty"] != "L2" or learn_options["method"] != "linreg"):
+    if learn_options["weighted"] is not None and (
+            learn_options["penalty"] != "L2" or learn_options["method"] != "linreg"):
         raise NotImplementedError("weighted prediction not implemented for any methods by L2 at the moment")
-        
-    if not learn_options.has_key("fit_intercept"):
+
+    if "fit_intercept" not in learn_options:
         learn_options["fit_intercept"] = True
-    if not learn_options.has_key('normalize_features'):
+    if 'normalize_features' not in learn_options:
         learn_options['normalize_features'] = True
 
     cv, n_folds = set_up_inner_folds(learn_options, y_all.iloc[train])
@@ -146,9 +167,14 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
 
     performance = np.zeros((len(learn_options["alpha"]), len(l1_ratio)))
     degenerate_pred = np.zeros((len(learn_options["alpha"])))
+    num_tests = len(l1_ratio) * len(learn_options['alpha']) * len(cv)
+    test_position = 0
     for train_inner, test_inner in cv:
+        # print(f"testing {train_inner} and {test_inner}")
         for i, alpha in enumerate(learn_options["alpha"]):
             for j, l1r in enumerate(l1_ratio):
+                print(f"Test {test_position} of {num_tests}")
+                test_position += 1
                 clf = train_linreg_model(alpha, l1r, learn_options, train_inner, X[train], y[train], y_all.iloc[train])
                 if learn_options["feature_select"]:
                     clf, tmp_pred = feature_select(clf, learn_options, test_inner, train_inner, X[train], y[train])
@@ -163,29 +189,25 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
                     performance[i, j] += tmp_auc
 
                 elif learn_options['training_metric'] == 'spearmanr':
-                    spearman = azimuth.util.spearmanr_nonan(y_all[learn_options['ground_truth_label']][train][test_inner], tmp_pred.flatten())[0]
+                    spearman = \
+                    np.nan_to_num(st.spearmanr(y_all[learn_options['ground_truth_label']][train][test_inner], tmp_pred.flatten())[0])
                     performance[i, j] += spearman
 
                 elif learn_options['training_metric'] == 'score':
-                    performance[i, j] += clf.score(X[test_inner], y_all[learn_options['ground_truth_label']][train][test_inner])
+                    performance[i, j] += clf.score(X[test_inner],
+                                                   y_all[learn_options['ground_truth_label']][train][test_inner])
 
                 elif learn_options["training_metric"] == "NDCG":
-                    assert "thresh" not in learn_options["ground_truth_label"], "for NDCG must not use thresholded ranks, but pure ranks"
+                    assert "thresh" not in learn_options[
+                        "ground_truth_label"], "for NDCG must not use thresholded ranks, but pure ranks"
 
-                    # sorted = tmp_pred[np.argsort(y_all[ground_truth_label].values[test_inner])[::-1]].flatten()
-                    # sortedgt = np.sort(y_all[ground_truth_label].values[test_inner])[::-1].flatten()
-                    # tmp_perf = ranking_metrics.ndcg_at_k_ties(sorted, learn_options["NDGC_k"], sortedgt)
                     tmp_truth = y_all[learn_options["ground_truth_label"]].values[train][test_inner].flatten()
-                    tmp_perf = ranking_metrics.ndcg_at_k_ties(tmp_truth, tmp_pred.flatten(), learn_options["NDGC_k"])
+                    tmp_perf = ndcg_at_k_ties(tmp_truth, tmp_pred.flatten(), learn_options["NDGC_k"])
                     performance[i, j] += tmp_perf
 
-                    degenerate_pred_tmp = len(np.unique(tmp_pred)) < len(tmp_pred)/2.0
+                    degenerate_pred_tmp = len(np.unique(tmp_pred)) < len(tmp_pred) / 2.0
                     degenerate_pred[i] += degenerate_pred_tmp
-
-                    # sanity checking metric wrt ties, etc.
-                    # rmse = np.sqrt(np.mean((tmp_pred - tmp_truth)**2))
-                    tmp_pred_r, tmp_truth_r = ranking_metrics.rank_data(tmp_pred, tmp_truth)
-                    # rmse_r = np.sqrt(np.mean((tmp_pred_r-tmp_truth_r)**2))
+                    # tmp_pred_r, tmp_truth_r = rank_data(tmp_pred, tmp_truth)
 
     performance /= n_folds
 
@@ -201,16 +223,19 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
 
     best_alpha, best_l1r = learn_options["alpha"][max_score_ind[0]], l1_ratio[max_score_ind[1]]
 
-    print "\t\tbest alpha is %f from range=%s" % (best_alpha, learn_options["alpha"][[0, -1]])
-    
+    # try:
+    #     print(f"\tbest alpha is {best_alpha} from range={learn_options['alpha'][[0, -1]]}")
+    # except:
+    #     raise Exception("Uh... something went wrong with figuring out 'best_alpha' at line 227 in regression.py.  Fix it.")
+
     if learn_options['penalty'] == "EN":
-        print "\t\tbest l1_ratio is %f from range=%s" % (best_l1r, l1_ratio[[0, -1]])
+        print("\t\tbest l1_ratio is {} from range={}".format(best_l1r, l1_ratio[[0,-1]]))
     max_perf = np.nanmax(performance)
 
     if max_perf < 0.0:
         raise Exception("performance is negative")
 
-    print "\t\tbest performance is %f" % max_perf
+    print(f"\t\tbest performance is {max_perf}")
 
     clf = train_linreg_model(best_alpha, l1r, learn_options, train, X, y, y_all)
     if learn_options["feature_select"]:
@@ -221,7 +246,7 @@ def linreg_on_fold(feature_sets, train, test, y, y_all, X, dim, dimsum, learn_op
 
     if learn_options["penalty"] != "L2" and learn_options["penalty"] is not None:
         y_pred = y_pred[:, None]
-            
+
     return y_pred, clf
 
 
@@ -230,7 +255,7 @@ def feature_select(clf, learn_options, test_inner, train_inner, X, y):
     assert learn_options["loss"] is not "huber", "won't use huber loss function with feature selection"
     non_zero_coeff = (clf.coef_ != 0.0)
     if non_zero_coeff.sum() > 0:
-        clf = LinearRegression()
+        clf = linear_model.LinearRegression()
         clf.fit(X[train_inner][:, non_zero_coeff.flatten()], y[train_inner])
         tmp_pred = clf.predict(X[test_inner][:, non_zero_coeff.flatten()])
     else:
@@ -244,7 +269,7 @@ def get_weights(learn_options, fold, y, y_all):
     '''
     weights = None
     if learn_options["weighted"] == "variance":
-        weights = 1.0/y_all["variance"].values[fold]
+        weights = 1.0 / y_all["variance"].values[fold]
     elif learn_options["weighted"] == "ndcg":
         # DCG: r[0] + np.sum(r[1:] / np.log2(np.arange(2, r.size + 1)))
         N = len(fold)
@@ -274,22 +299,23 @@ def get_weights(learn_options, fold, y, y_all):
     return weights
 
 
-def set_up_inner_folds(learn_options, y):            
+def set_up_inner_folds(learn_options: dict, y):
     label_encoder = sklearn.preprocessing.LabelEncoder()
-    label_encoder.fit(y['Target gene'].values)    
+    label_encoder.fit(y['Target gene'].values)
     gene_classes = label_encoder.transform(y['Target gene'].values)
-    n_genes = len(np.unique(gene_classes))    
-    if ('ignore_gene_level_for_inner_loop' in learn_options and learn_options['ignore_gene_level_for_inner_loop']) or learn_options["cv"] == "stratified" or n_genes==1:
+    n_genes = len(np.unique(gene_classes))
+    cv = []
+    if ('ignore_gene_level_for_inner_loop' in learn_options and learn_options['ignore_gene_level_for_inner_loop']) or \
+            learn_options["cv"] == "stratified" or n_genes == 1:
         if 'n_folds' not in learn_options.keys():
             n_splits = len(np.unique(gene_classes))
         else:
             n_splits = learn_options['n_folds']
         skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
-        cv = skf.split(np.zeros(len(gene_classes), dtype = np.bool), gene_classes)
+        cv = skf.split(np.zeros(len(gene_classes), dtype=np.bool), gene_classes)
     elif learn_options["cv"] == "gene":
         gene_list = np.unique(y['Target gene'].values)
-        cv = []
         for gene in gene_list:
             cv.append(azimuth.predict.get_train_test(gene, y))
-        n_folds = len(cv)
+    n_folds = len(cv)
     return cv, n_folds

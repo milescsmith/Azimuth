@@ -2,18 +2,20 @@ import copy
 import multiprocessing
 import time
 
-from azimuth import metrics as ranking_metrics
 import numpy as np
 import sklearn
 import sklearn.metrics
-from azimuth import util
 from sklearn.metrics import roc_curve, auc
 
+from azimuth import metrics as ranking_metrics
+from azimuth import util
 from azimuth.models import DNN
+from azimuth.models import GP
 from azimuth.models import baselines
 from azimuth.models import ensembles
 from azimuth.models import regression
-from azimuth.models import GP
+
+import scipy.stats as st
 
 
 def fill_in_truth_and_predictions(truth,
@@ -40,7 +42,7 @@ def fill_in_truth_and_predictions(truth,
 
 def construct_filename(learn_options, TEST):
     if "V" in learn_options:
-        filename = "V%s" % learn_options["V"]
+        filename = f"V{learn_options['V']}"
     else:
         filename = "offV1"
 
@@ -48,26 +50,18 @@ def construct_filename(learn_options, TEST):
         filename = "TEST."
 
     filename += learn_options["method"]
-    filename += '.order%d' % learn_options["order"]
+    filename += f'.order{learn_options["order"]}'
     # try:
     #     learn_options["target_name"] = ".%s" % learn_options["target_name"].split(" ")[1]
     # except:
     #     pass
     filename += learn_options["target_name"]
-    if learn_options["method"] == "GPy":
-        pass
-        # filename += ".R%d" % opt_options['num_restarts']
-        # filename += ".K%s" % learn_options['kerntype']
-        # if learn_options.has_key('degree'):
-        #     filename += "d%d" % learn_options['degree']
-        # if learn_options['warped']:
-        #     filename += ".Warp"
-    elif learn_options["method"] == "linreg" and learn_options["penalty"] is not None:
-        filename += "." + learn_options["penalty"]
+    if learn_options["method"] == "linreg" and learn_options["penalty"] is not None:
+        filename += f".{learn_options['penalty']}"
     filename += "." + learn_options["cv"]
 
     if learn_options["training_metric"] == "NDCG":
-        filename += ".NDGC_%d" % learn_options["NDGC_k"]
+        filename += f".NDGC_{learn_options['NDGC_k']}"
     elif learn_options["training_metric"] == "AUC":
         filename += ".AUC"
     elif learn_options["training_metric"] == 'spearmanr':
@@ -113,7 +107,7 @@ def extract_NDCG_for_fold(metrics, y_ground_truth, test, y_pred, learn_options):
 
 
 def extract_spearman_for_fold(metrics, y_ground_truth, test, y_pred):
-    spearman = util.spearmanr_nonan(y_ground_truth[test].flatten(), y_pred.flatten())[0]
+    spearman = np.nan_to_num(st.spearmanr(y_ground_truth[test].flatten(), y_pred.flatten())[0])
     assert not np.isnan(spearman), "found nan spearman"
     metrics.append(spearman)
 
@@ -139,8 +133,8 @@ def get_train_test(test_gene, y_all, train_genes=None):
         test = (y_all.index.get_level_values('Target gene').values == test_gene)
 
     # convert to indices
-    test = np.where(test is True)[0]
-    train = np.where(train is True)[0]
+    test = np.where(test)[0]
+    train = np.where(train)[0]
     return train, test
 
 
@@ -152,15 +146,15 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     # Output: cv_score_median, gene_rocs
     # When CV=False, it trains on everything (and tests on everything, just to fit the code)
 
-    print(f"range of y_all is [{np.min(y_all[learn_options['target_name']].values)}, "
-          f"{np.max(y_all[learn_options['target_name']].values)}]")
+    # print(f"range of y_all is [{np.min(y_all[learn_options['target_name']].values)}, "
+    #       f"{np.max(y_all[learn_options['target_name']].values)}]")
 
     allowed_methods = ["GPy", "linreg", "AdaBoostRegressor", "AdaBoostClassifier",
                        "DecisionTreeRegressor", "RandomForestRegressor",
                        "ARDRegression", "mean", "random", "DNN",
                        "lasso_ensemble", "doench", "logregL1", "sgrna_from_doench", 'SVC', 'xu_et_al']
 
-    assert (learn_options["method"] in allowed_methods), f"invalid method: {learn_options['method']}"
+    assert (learn_options["method"] in allowed_methods), "invalid method: {}".format(learn_options['method'])
     assert learn_options["method"] == "linreg" and \
            learn_options['penalty'] == 'L2' or \
            learn_options["weighted"] is None, \
@@ -243,7 +237,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 if learn_options['num_genes_remove_train'] == 0:
                     assert np.all(cv_i_orig[0] == cv[i][0])
                     assert np.all(cv_i_orig[1] == cv[i][1])
-                print(f"# train/train after/before is {len(cv[i][0])}, {len(cv_i_orig[0])}")
+                print("# train/train after/before is {}, {}".format(len(cv[i][0]), len(cv_i_orig[0])))
                 print(f"# test/test after/before is {len(cv[i][1])}, {len(cv_i_orig[1])}")
     else:
         raise Exception("invalid cv options given: %s" % learn_options["cv"])
@@ -262,67 +256,66 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
 
     # do the cross-validation
     num_proc = learn_options["num_proc"]
+    X = inputs
     if num_proc > 1:
         num_proc = np.min([num_proc, len(cv)])
-        print(f"using multiprocessing with {num_proc} procs--one for each fold")
+        print(f"using multiprocessing with {num_proc} procs -- one for each fold")
         jobs = []
         pool = multiprocessing.Pool(processes=num_proc)
         for i, fold in enumerate(cv):
             train, test = fold
-            print(f"working on fold {i} of {len(cv)}, with {len(train)} train and {len(test)} test")
+            print(f"working on fold {i+1} of {len(cv)}, with {len(train)} train and {len(test)} test")
             if learn_options["method"] == "GPy":
                 job = pool.apply_async(GP.gp_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(feature_sets, train, test, y, y_all, learn_options))
             elif learn_options["method"] == "linreg":
                 job = pool.apply_async(regression.linreg_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y, y_all, X, learn_options))
             elif learn_options["method"] == "logregL1":
                 job = pool.apply_async(regression.logreg_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y, y_all, X, learn_options))
             elif learn_options["method"] == "AdaBoostRegressor":
                 job = pool.apply_async(ensembles.adaboost_on_fold, args=(
-                    feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options, False))
+                    train, test, y, y_all, X, learn_options, False))
             elif learn_options["method"] == "AdaBoostClassifier":
                 job = pool.apply_async(ensembles.adaboost_on_fold, args=(
-                    feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options, True))
+                    train, test, y, y_all, X, learn_options, True))
             elif learn_options["method"] == "DecisionTreeRegressor":
-                job = pool.apply_async(ensembles.decisiontree_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                job = pool.apply_async(ensembles.decisiontree_on_fold, args=(train, test, y, X))
             elif learn_options["method"] == "RandomForestRegressor":
-                job = pool.apply_async(ensembles.randomforest_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                job = pool.apply_async(ensembles.randomforest_on_fold, args=(train, test, y, X))
             elif learn_options["method"] == "ARDRegression":
-                job = pool.apply_async(regression.ARDRegression_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                job = pool.apply_async(regression.ARDRegression_on_fold, args=(train, test, y, X))
             elif learn_options["method"] == "random":
                 job = pool.apply_async(baselines.random_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(test))
             elif learn_options["method"] == "mean":
                 job = pool.apply_async(baselines.mean_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y))
             elif learn_options["method"] == "SVC":
                 job = pool.apply_async(baselines.SVC_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y_all, X, learn_options))
             elif learn_options["method"] == "DNN":
                 job = pool.apply_async(DNN.DNN_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y_all, X, learn_options))
             elif learn_options["method"] == "lasso_ensemble":
                 job = pool.apply_async(ensembles.LASSOs_ensemble_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(feature_sets, train, test, y, y_all, X, learn_options))
             elif learn_options["method"] == "doench":
                 job = pool.apply_async(baselines.doench_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(train, test, y, y_all, X, learn_options))
             elif learn_options["method"] == "sgrna_from_doench":
                 job = pool.apply_async(baselines.sgrna_from_doench_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(feature_sets, test, X))
             elif learn_options["method"] == "xu_et_al":
                 job = pool.apply_async(baselines.xu_et_al_on_fold,
-                                       args=(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options))
+                                       args=(test, X, learn_options))
             else:
                 raise Exception("did not find method=%s" % learn_options["method"])
             jobs.append(job)
         pool.close()
         pool.join()
+        print(f"finished fold {i + 1}")
         for i, fold in enumerate(cv):  # i in range(0,len(jobs)):
             y_pred, m[i] = jobs[i].get()
             train, test = fold
@@ -334,7 +327,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                                          y_pred=y_pred)
             elif learn_options["training_metric"] == "NDCG":
                 extract_NDCG_for_fold(metrics=metrics,
-                                      y_ground_truth=[learn_options["ground_truth_label"]].values,
+                                      y_ground_truth=y_all[learn_options["ground_truth_label"]].values,
                                       test=test,
                                       y_pred=y_pred,
                                       learn_options=learn_options)
@@ -344,7 +337,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                                           test=test,
                                           y_pred=y_pred)
             else:
-                raise Exception("invalid 'training_metric' in learn_options: %s" % learn_options["training_metric"])
+                raise Exception(f"invalid 'training_metric' in learn_options: {learn_options['training_metric']}")
 
             truth, predictions = fill_in_truth_and_predictions(truth, predictions, fold_labels[i], y_all, y_pred,
                                                                learn_options, test)
@@ -356,54 +349,37 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         for i, fold in enumerate(cv):
             train, test = fold
             if learn_options["method"] == "GPy":
-                y_pred, m[i] = GP.gp_on_fold(feature_sets, train, test, y, y_all, inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = GP.gp_on_fold(feature_sets, train, test, y, y_all, learn_options)
             elif learn_options["method"] == "linreg":
-                y_pred, m[i] = regression.linreg_on_fold(feature_sets, train, test, y, y_all, inputs,
-                                                         dim, dimsum, learn_options)
+                y_pred, m[i] = regression.linreg_on_fold(train, test, y, y_all, X, learn_options)
             elif learn_options["method"] == "logregL1":
-                y_pred, m[i] = regression.logreg_on_fold(feature_sets, train, test, y, y_all, inputs,
-                                                         dim, dimsum, learn_options)
+                y_pred, m[i] = regression.logreg_on_fold(train, test, y, y_all, X, learn_options)
             elif learn_options["method"] == "AdaBoostRegressor":
-                y_pred, m[i] = ensembles.adaboost_on_fold(feature_sets, train, test, y, y_all, inputs,
-                                                          dim, dimsum, learn_options,
-                                                          classification=False)
+                y_pred, m[i] = ensembles.adaboost_on_fold(train, test, y, y_all, X, learn_options, classification=False)
             elif learn_options["method"] == "AdaBoostClassifier":
-                y_pred, m[i] = ensembles.adaboost_on_fold(feature_sets, train, test, y, y_all, inputs,
-                                                          dim, dimsum, learn_options,
-                                                          classification=True)
+                y_pred, m[i] = ensembles.adaboost_on_fold(train, test, y, y_all, X, learn_options, classification=True)
             elif learn_options["method"] == "DecisionTreeRegressor":
-                y_pred, m[i] = ensembles.decisiontree_on_fold(feature_sets, train, test, y, y_all,
-                                                              inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = ensembles.decisiontree_on_fold(train, test, y, X)
             elif learn_options["method"] == "RandomForestRegressor":
-                y_pred, m[i] = ensembles.randomforest_on_fold(feature_sets, train, test, y, y_all,
-                                                              inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = ensembles.randomforest_on_fold(train, test, y, X)
             elif learn_options["method"] == "ARDRegression":
-                y_pred, m[i] = regression.ARDRegression_on_fold(feature_sets, train, test, y, y_all,
-                                                                inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = regression.ARDRegression_on_fold(train, test, y, X)
             elif learn_options["method"] == "random":
-                y_pred, m[i] = baselines.random_on_fold(feature_sets, train, test, y, y_all, inputs, dim,
-                                                        dimsum, learn_options)
+                y_pred, m[i] = baselines.random_on_fold(test)
             elif learn_options["method"] == "mean":
-                y_pred, m[i] = baselines.mean_on_fold(feature_sets, train, test, y, y_all, inputs, dim,
-                                                      dimsum, learn_options)
+                y_pred, m[i] = baselines.mean_on_fold(train, test, y)
             elif learn_options["method"] == "SVC":
-                y_pred, m[i] = baselines.SVC_on_fold(feature_sets, train, test, y, y_all, inputs, dim,
-                                                     dimsum, learn_options)
+                y_pred, m[i] = baselines.SVC_on_fold(train, test, y_all, X, learn_options)
             elif learn_options["method"] == "DNN":
-                y_pred, m[i] = DNN.DNN_on_fold(feature_sets, train, test, y, y_all, inputs, dim, dimsum,
-                                               learn_options)
+                y_pred, m[i] = DNN.DNN_on_fold(train, test, y_all, X, learn_options)
             elif learn_options["method"] == "lasso_ensemble":
-                y_pred, m[i] = ensembles.LASSOs_ensemble_on_fold(feature_sets, train, test, y, y_all,
-                                                                 inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = ensembles.LASSOs_ensemble_on_fold(feature_sets, train, test, y, y_all, X, learn_options)
             elif learn_options["method"] == "doench":
-                y_pred, m[i] = baselines.doench_on_fold(feature_sets, train, test, y, y_all, inputs, dim,
-                                                        dimsum, learn_options)
+                y_pred, m[i] = baselines.doench_on_fold(train, test, y, y_all, X, learn_options)
             elif learn_options["method"] == "sgrna_from_doench":
-                y_pred, m[i] = baselines.sgrna_from_doench_on_fold(feature_sets, train, test, y, y_all,
-                                                                   inputs, dim, dimsum, learn_options)
+                y_pred, m[i] = baselines.sgrna_from_doench_on_fold(feature_sets, test, X)
             elif learn_options["method"] == "xu_et_al":
-                y_pred, m[i] = baselines.xu_et_al_on_fold(feature_sets, train, test, y, y_all, inputs,
-                                                          dim, dimsum, learn_options)
+                y_pred, m[i] = baselines.xu_et_al_on_fold(test, X, learn_options)
             else:
                 raise Exception("invalid method found: %s" % learn_options["method"])
 
@@ -428,14 +404,14 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             truth, predictions = fill_in_truth_and_predictions(truth, predictions, fold_labels[i], y_all, y_pred,
                                                                learn_options, test)
 
-            print(f"\t\tRMSE: {np.sqrt(((y_pred - y[test])**2).mean())}")
-            print(f"\t\tSpearman correlation: {util.spearmanr_nonan(y[test], y_pred)[0]}")
-            print(f"\t\tfinished fold/gene {i+1} of {len(fold_labels)}")
+            print(f"\t\tRMSE: {np.sqrt(((y_pred - y[test]) ** 2).mean())}")
+            print(f"\t\tSpearman correlation: {np.nan_to_num(st.spearmanr_nonan(y[test], y_pred)[0])}")
+            print(f"\t\tfinished fold/gene {i + 1} of {len(fold_labels)}")
 
     cv_median_metric = [np.median(metrics)]
     gene_pred = [(truth, predictions)]
     print(f"\t\tmedian {learn_options['training_metric']} across gene folds: {cv_median_metric[-1]:.3f}")
 
     t3 = time.time()
-    print(f"\t\tElapsed time for cv is {(t3-t2):.{2}} seconds")
+    print(f"\t\tElapsed time for cv is {(t3 - t2):.{2}} seconds")
     return metrics, gene_pred, fold_labels, m, dimsum, filename, feature_names
