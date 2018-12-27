@@ -534,22 +534,9 @@ def save_final_model_V3(filename=None, include_position=True, learn_options=None
                                             learn_options_set=learn_options_set,
                                             test=test,
                                             adaboost_CV=False,
-                                            pam_audit=length_audit,
+                                            pam_audit=pam_audit,
                                             length_audit=length_audit)
-    # results, all_learn_options = run_models(["AdaBoost", "RandomForest", "linreg", "L2", "L1"],
-    #                                         orders=[2],
-    #                                         adaboost_learning_rates=[0.1],
-    #                                         adaboost_max_depths=[3],
-    #                                         adaboost_num_estimators=[100],
-    #                                         learn_options_set=learn_options_set,
-    #                                         test=test,
-    #                                         adaboost_CV=True,
-    #                                         pam_audit=pam_audit,
-    #                                         length_audit=length_audit)
-    #all_metrics, gene_names = azimuth.util.get_all_metrics(results, all_learn_options)
-    #azimuth.util.plot_all_metrics(all_metrics, gene_names, all_learn_options, save=True)
-    model = results.values()[0][3][0]
-    # model = results
+    model = list(results.values())[0][3][0]
 
     with open(filename, 'wb') as f:
         pickle.dump((model, learn_options), f, -1)
