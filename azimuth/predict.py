@@ -270,7 +270,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                                        args=(feature_sets, train, test, y, y_all, learn_options))
             elif learn_options["method"] == "linreg":
                 job = pool.apply_async(regression.linreg_on_fold,
-                                       args=(train, test, y, y_all, X, learn_options))
+                                       args=(train, test, y, y_all, X, learn_options, fold))
             elif learn_options["method"] == "logregL1":
                 job = pool.apply_async(regression.logreg_on_fold,
                                        args=(train, test, y, y_all, X, learn_options))
@@ -351,7 +351,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             if learn_options["method"] == "GPy":
                 y_pred, m[i] = GP.gp_on_fold(feature_sets, train, test, y, y_all, learn_options)
             elif learn_options["method"] == "linreg":
-                y_pred, m[i] = regression.linreg_on_fold(train, test, y, y_all, X, learn_options)
+                y_pred, m[i] = regression.linreg_on_fold(train, test, y, y_all, X, learn_options, i)
             elif learn_options["method"] == "logregL1":
                 y_pred, m[i] = regression.logreg_on_fold(train, test, y, y_all, X, learn_options)
             elif learn_options["method"] == "AdaBoostRegressor":

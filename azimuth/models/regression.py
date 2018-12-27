@@ -141,7 +141,7 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     return y_pred, clf
 
 
-def linreg_on_fold(train, test, y, y_all, X, learn_options):
+def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
     '''
     linreg using scikitlearn, using more standard regression models with penalization requiring
     nested-cross-validation
@@ -173,7 +173,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options):
         # print(f"testing {train_inner} and {test_inner}")
         for i, alpha in enumerate(learn_options["alpha"]):
             for j, l1r in enumerate(l1_ratio):
-                print(f"Test {test_position} of {num_tests}")
+                print(f"Test {test_position} of {num_tests} for fold {fold_number}")
                 test_position += 1
                 clf = train_linreg_model(alpha, l1r, learn_options, train_inner, X[train], y[train], y_all.iloc[train])
                 if learn_options["feature_select"]:
