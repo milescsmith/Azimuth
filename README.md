@@ -1,3 +1,9 @@
+# Note!
+
+This is my forked version of Azimuth, updated to run under Python 3.  Currently, it runs (at least with Python 3.6.7) and is capable of generating new cutting efficiency models (with Scikit-learn 0.20.0).  Unittests (the nosetests mentioned below) fail, but that is only because *two* protospacers score differently than the reference and, thus, I believe the library to be in working order.
+
+Some of this code may be a disheveled mess - there were a multitude of dead ends, unused code, and interfaces to compute clusters that I ripped out instead of trying to update.  I will continue to rip these parts out and try to reduce this to the minimal amount of code necessary.  Along with that, many of the plotting and metric generation functions are gone and any that remain should be considered to be depreciated.
+
 # Azimuth
 ##### Machine Learning-Based Predictive Modelling of CRISPR/Cas9 guide efficiency.
 [![Travis](https://img.shields.io/travis/MicrosoftResearch/Azimuth.svg)](https://travis-ci.org/MicrosoftResearch/Azimuth) [![PyPI](https://img.shields.io/pypi/v/azimuth.svg)](https://pypi.python.org/pypi/azimuth) [![PyPI](https://img.shields.io/pypi/l/azimuth.svg)]()
