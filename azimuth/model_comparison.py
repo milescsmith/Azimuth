@@ -543,11 +543,6 @@ def save_final_model_V3(filename=None, include_position=True, learn_options=None
 
     return model
 
-
-def basestring(args):
-    pass
-
-
 def predict(seq, aa_cut=None, percent_peptide=None, model=None, model_file=None, pam_audit=True, length_audit=False,
             learn_options_override=None):
     """
@@ -566,17 +561,16 @@ def predict(seq, aa_cut=None, percent_peptide=None, model=None, model_file=None,
     # assert not (model is None and model_file is None), "you have to specify either a model or a model_file"
     assert isinstance(seq, np.ndarray), "Please ensure seq is a numpy array"
     assert len(seq[0]) > 0, "Make sure that seq is not empty"
-    assert isinstance(seq[0],
-                      basestring), "Please ensure input sequences are in string format, i.e. 'AGAG' rather than ['A' 'G' 'A' 'G'] or alternate representations"
+    assert isinstance(seq[0], str), "Please ensure input sequences are in string format, i.e. 'AGAG' rather than ['A' 'G' 'A' 'G'] or alternate representations"
 
     if aa_cut is not None:
         assert len(aa_cut) > 0, "Make sure that aa_cut is not empty"
-        assert isinstance(aa_cut, (np.ndarray)), "Please ensure aa_cut is a numpy array"
+        assert isinstance(aa_cut, np.ndarray), "Please ensure aa_cut is a numpy array"
         assert np.all(np.isreal(aa_cut)), "amino-acid cut position needs to be a real number"
 
     if percent_peptide is not None:
         assert len(percent_peptide) > 0, "Make sure that percent_peptide is not empty"
-        assert isinstance(percent_peptide, (np.ndarray)), "Please ensure percent_peptide is a numpy array"
+        assert isinstance(percent_peptide, np.ndarray), "Please ensure percent_peptide is a numpy array"
         assert np.all(np.isreal(percent_peptide)), "percent_peptide needs to be a real number"
 
     if model_file is None:
@@ -600,14 +594,14 @@ def predict(seq, aa_cut=None, percent_peptide=None, model=None, model_file=None,
 
     learn_options = override_learn_options(learn_options_override, learn_options)
 
-    x_df = pandas.DataFrame(columns=[u'30mer', u'Strand'], data=zip(seq, ['NA' for x in range(len(seq))]))
+    x_df = pandas.DataFrame(columns=[u'30mer', u'Strand'], data=list(zip(seq, ['NA' for x in range(len(seq))])))
 
     if np.all(percent_peptide != -1) and (percent_peptide is not None and aa_cut is not None):
         gene_position = pandas.DataFrame(columns=[u'Percent Peptide', u'Amino Acid Cut position'],
-                                         data=zip(percent_peptide, aa_cut))
+                                         data=list(zip(percent_peptide, aa_cut)))
     else:
         gene_position = pandas.DataFrame(columns=[u'Percent Peptide', u'Amino Acid Cut position'],
-                                         data=zip(np.ones(seq.shape[0]) * -1, np.ones(seq.shape[0]) * -1))
+                                         data=list(zip(np.ones(seq.shape[0]) * -1, np.ones(seq.shape[0]) * -1)))
 
     feature_sets = feat.featurize_data(x_df, learn_options, pandas.DataFrame(), gene_position, pam_audit=pam_audit,
                                        length_audit=length_audit)
