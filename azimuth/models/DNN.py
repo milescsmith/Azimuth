@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import theanets
+#from keras.wrappers import scikit_learn
 from scipy.stats import spearmanr
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
@@ -42,6 +43,7 @@ def DNN_on_fold(train, test, y_all, X, learn_options):
                 n_splits = len(cv)
 
             for train_ind, valid_ind in cv:
+                #f = scikit_learn.
                 e = theanets.Experiment(
                     theanets.Regressor,
                     layers=architecture,
