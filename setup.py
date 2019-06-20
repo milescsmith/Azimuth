@@ -6,7 +6,7 @@ from setuptools import setup
 # os.system('pip install git+https://github-private.corp.com/user/repo.git@master')
 
 setup(name='Azimuth',
-      version='2.5',
+      version='3.0',
       author='Nicolo Fusi, Jennifer Listgarten, and Miles Smith',
       author_email="fusi@microsoft.com, jennl@microsoft.com, mileschristiansmith@gmail.com",
       description="Machine Learning-Based Predictive Modelling of CRISPR/Cas9 guide efficiency",
