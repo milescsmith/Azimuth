@@ -12,7 +12,7 @@ from .model_comparison import run_models
 @click.option("--test", type=bool, default=False, is_flag=True)
 @click.option("--order", type=int, default=1)
 @click.option("--likelihood", type=str, default="gaussian")  # applies only to GP:
-@click.option("--weighted_degree", "WD", type=int, default=3)  # applies only to GP:
+@click.option("--weighted_degree", type=int, default=3)  # applies only to GP:
 @click.option("--adaboost_learning_rate", type=float, default=0.1)
 @click.option("--adaboost_max_depth", type=int, default=3)
 @click.option("--adaboost_num_estimators", type=int, default=100)
@@ -54,7 +54,7 @@ def main(
         orders=[order],
         test=test,
         GP_likelihoods=[likelihood],
-        WD_kernel_degrees=[WD],
+        WD_kernel_degrees=[weighted_degree],
         adaboost_num_estimators=[adaboost_num_estimators],
         adaboost_max_depths=[adaboost_max_depth],
         adaboost_learning_rates=[adaboost_learning_rate],

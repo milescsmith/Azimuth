@@ -10,8 +10,8 @@ def weighted_degree_kxx(x: int, xp: int, d: int) -> int:
         beta_k = 2 * (d - k + 1) / float((d * (d + 1)))
         sim_k = 0
         for i in range(1, l - k + 1):
-            if x[i:i + k] == xp[i:i + k]:
-                sim_k += 1.
+            if x[i : i + k] == xp[i : i + k]:
+                sim_k += 1.0
         sim += beta_k * sim_k
 
     return sim
@@ -28,10 +28,10 @@ def WD_K(sequences, d: int = 4) -> np.ndarray:
     return K
 
 
-if __name__ == '__main__':
-    x1 = 'ATCGATCG'
-    x2 = 'ATCGATCG'
-    x3 = 'ATCGATCC'
-    x4 = 'ATCGATAA'
-    x5 = 'ANNNNNNN'
+if __name__ == "__main__":
+    x1 = "ATCGATCG"
+    x2 = "ATCGATCG"
+    x3 = "ATCGATCC"
+    x4 = "ATCGATAA"
+    x5 = "ANNNNNNN"
     K = WD_K([x1, x2, x3, x4, x5])

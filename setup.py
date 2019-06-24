@@ -26,12 +26,9 @@ setup(
     install_requires=[
         "scipy",
         "numpy",
-        "nose",
         "scikit-learn",
         "pandas",
-        "biopython",
         "GPy",
-        "ipyparallel",
         "hyperopt",
         "paramz",
         "theanets @ git+https://github.com/lmjohns3/theanets",
