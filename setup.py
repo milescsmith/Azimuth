@@ -28,7 +28,7 @@ setup(name='Azimuth',
       package_data={
             'azimuth': ['saved_models/*.*','data/*.*']
       },
-      install_requires=['scipy', 'numpy', 'nose', 'scikit-learn', 'pandas', 'biopython','GPy','ipyparallel', 'mkl',
+      install_requires=['scipy', 'numpy', 'nose', 'scikit-learn', 'pandas', 'biopython','GPy','ipyparallel',
                         'hyperopt', 'paramz', 'theanets==0.8.0rc0', 'glmnet_py', 'xlrd'],
       dependency_links=['https://github.com/lmjohns3/theanets/tarball/master#egg=theanets-0.8.0rc0']
       )

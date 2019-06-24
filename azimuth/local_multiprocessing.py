@@ -1,6 +1,6 @@
 import multiprocessing
 import numpy as np
-from mkl import set_num_threads
+# from mkl import set_num_threads # mkl is never used outside of this
 
 def configure(num_jobs: int = 8,
               test: bool = False,
@@ -24,11 +24,11 @@ def configure(num_jobs: int = 8,
         num_jobs = 1
         num_thread_per_proc = 1
 
-    try:
-        set_num_threads(num_thread_per_proc)
-    except ImportError:
-        print("MKL not available, so I'm not adjusting the number of threads")
+    # try:
+    #     set_num_threads(num_thread_per_proc)
+    # except ImportError:
+    #     print("MKL not available, so I'm not adjusting the number of threads")
 
-    print(f"Launching {num_jobs} jobs with {num_thread_per_proc} MKL threads each")
+    # print(f"Launching {num_jobs} jobs with {num_thread_per_proc} MKL threads each")
 
     return num_jobs
