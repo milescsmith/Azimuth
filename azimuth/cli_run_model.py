@@ -1,61 +1,42 @@
-import argparse
+import click
 import os
 import pickle
 
 from .model_comparison import run_models
 
-# command-line version of model_comparison.py (see that file for more options?)
 
-if __name__ == "__main__":
-    USAGE = "usage: cli_run_model.py model"
-    parser = argparse.ArgumentParser(usage=USAGE)
-    # model e.g. L1, or GP
-    parser.add_argument("model")
-    parser.add_argument("--test", dest="test", action="store_true", default=False)
-    parser.add_argument("--order", dest="order", action="store", type=int, default=1)
-    # applies only to GP:
-    parser.add_argument(
-        "--likelihood", dest="likelihood", action="store", type=str, default="gaussian"
-    )
-    # applies only to GP:
-    parser.add_argument(
-        "--weighted-degree", dest="WD", action="store", type=int, default=3
-    )
-
-    parser.add_argument(
-        "--adaboost-learning-rate",
-        dest="adaboost_lr",
-        action="store",
-        type=float,
-        default=0.1,
-    )
-    parser.add_argument(
-        "--adaboost-max-depth",
-        dest="adaboost_max_depth",
-        action="store",
-        type=int,
-        default=3,
-    )
-    parser.add_argument(
-        "--adaboost-num-estimators",
-        dest="adaboost_num_estimators",
-        action="store",
-        type=int,
-        default=100,
-    )
-    parser.add_argument(
-        "--adaboost-CV", dest="adaboost_CV", action="store_true", default=False
-    )
-
-    parser.add_argument(
-        "--output-dir", dest="output_dir", action="store", type=str, default="./"
-    )
-
-    parser.add_argument(
-        "--exp-name", dest="exp_name", action="store", type=str, default=None
-    )
-
-    options = parser.parse_args()
+@click.command()
+@click.option(
+    "model", help="model e.g. L1, or GP", default=None, required=False, type=str
+)
+@click.option("--test", type=bool, default=False, is_flag=True)
+@click.option("--order", type=int, default=1)
+@click.option("--likelihood", type=str, default="gaussian")  # applies only to GP:
+@click.option("--weighted_degree", "WD", type=int, default=3)  # applies only to GP:
+@click.option("--adaboost_learning_rate", type=float, default=0.1)
+@click.option("--adaboost_max_depth", type=int, default=3)
+@click.option("--adaboost_num_estimators", type=int, default=100)
+@click.option("--adaboost_CV", dest="adaboost_CV", is_flag=True, default=False)
+@click.option("--output_dir", type=str, default="./")
+@click.option("--exp_name", type=str, default=None)
+@click.help_option(
+    model,
+    test,
+    order,
+    likelihood,
+    weighted_degree,
+    adaboost_learning_rate,
+    adaboost_max_depth,
+    adaboost_num_estimators,
+    adaboost_CV,
+    output_dir,
+    exp_name,
+)
+def main():
+    """command-line version of model_comparison.py 
+    \f
+    (see that file for more options?)
+    """
 
     # store current directory
     cur_dir = os.getcwd()
@@ -64,25 +45,29 @@ if __name__ == "__main__":
     # change directory to script directory so that relative paths work
     os.chdir(dname)
 
-    with open(options.output_dir + "/learn_options.pickle", "rb") as f:
+    with open(output_dir + "/learn_pickle", "rb") as f:
         learn_options = pickle.load(f)
 
     results, all_learn_options = run_models(
-        [options.model],
+        [model],
         learn_options_set=learn_options,
-        orders=[options.order],
-        test=options.test,
-        GP_likelihoods=[options.likelihood],
-        WD_kernel_degrees=[options.WD],
-        adaboost_num_estimators=[options.adaboost_num_estimators],
-        adaboost_max_depths=[options.adaboost_max_depth],
-        adaboost_learning_rates=[options.adaboost_lr],
-        adaboost_CV=options.adaboost_CV,
+        orders=[order],
+        test=test,
+        GP_likelihoods=[likelihood],
+        WD_kernel_degrees=[WD],
+        adaboost_num_estimators=[adaboost_num_estimators],
+        adaboost_max_depths=[adaboost_max_depth],
+        adaboost_learning_rates=[adaboost_learning_rate],
+        adaboost_CV=adaboost_CV,
     )
 
     exp_name = results.keys()[0]
 
     os.chdir(cur_dir)
 
-    with open(options.output_dir + "/" + exp_name + ".pickle", "wb") as f:
+    with open(output_dir + "/" + exp_name + ".pickle", "wb") as f:
         pickle.dump((results, all_learn_options), f)
+
+
+if __name__ == "__main__":
+    main()
