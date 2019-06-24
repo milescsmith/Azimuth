@@ -19,7 +19,8 @@ from .model_comparison import run_models
 @click.option("--adaboost_CV", dest="adaboost_CV", is_flag=True, default=False)
 @click.option("--output_dir", type=str, default="./")
 @click.option("--exp_name", type=str, default=None)
-@click.help_option(
+@click.help_option()
+def main(
     model,
     test,
     order,
@@ -31,8 +32,7 @@ from .model_comparison import run_models
     adaboost_CV,
     output_dir,
     exp_name,
-)
-def main():
+):
     """command-line version of model_comparison.py 
     \f
     (see that file for more options?)
