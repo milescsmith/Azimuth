@@ -1,12 +1,16 @@
 import multiprocessing
 import numpy as np
+
 # from mkl import set_num_threads # mkl is never used outside of this
 
-def configure(num_jobs: int = 8,
-              test: bool = False,
-              subtract: int = 1,
-              num_proc: int = None,
-              num_thread_per_proc: int = None) -> int:
+
+def configure(
+    num_jobs: int = 8,
+    test: bool = False,
+    subtract: int = 1,
+    num_proc: int = None,
+    num_thread_per_proc: int = None,
+) -> int:
 
     """
     num_jobs is typically the # of genes we are parallelizing over
@@ -18,7 +22,7 @@ def configure(num_jobs: int = 8,
         num_jobs = num_proc
 
     if num_thread_per_proc is None:
-        num_thread_per_proc = int(np.floor(num_proc/num_jobs))
+        num_thread_per_proc = int(np.floor(num_proc / num_jobs))
 
     if test:
         num_jobs = 1

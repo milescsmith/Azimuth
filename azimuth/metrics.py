@@ -16,9 +16,6 @@ import numpy as np
 import scipy as sp
 import scipy.stats
 
-# from pdb import set_trace
-# from . import util as ut
-
 
 def mean_reciprocal_rank(rs: list) -> np.ndarray:
     """Score is reciprocal of the rank of the first relevant item
@@ -44,7 +41,7 @@ def mean_reciprocal_rank(rs: list) -> np.ndarray:
         Mean reciprocal rank
     """
     rs = (np.asarray(r).nonzero()[0] for r in rs)
-    return np.mean([1. / (r[0] + 1) if r.size else 0. for r in rs])
+    return np.mean([1.0 / (r[0] + 1) if r.size else 0.0 for r in rs])
 
 
 def r_precision(r: list) -> np.ndarray:
@@ -72,8 +69,8 @@ def r_precision(r: list) -> np.ndarray:
     r = np.asarray(r) != 0
     z = r.nonzero()[0]
     if not z.size:
-        return 0.
-    return np.mean(r[:z[-1] + 1])
+        return 0.0
+    return np.mean(r[: z[-1] + 1])
 
 
 def precision_at_k(r, k):
@@ -108,7 +105,7 @@ def precision_at_k(r, k):
     assert k >= 1
     r = np.asarray(r)[:k] != 0
     if r.size != k:
-        raise ValueError('Relevance score length < k')
+        raise ValueError("Relevance score length < k")
     return np.mean(r)
 
 
@@ -134,7 +131,7 @@ def average_precision(r):
     r = np.asarray(r) != 0
     out = [precision_at_k(r, k + 1) for k in range(r.size) if r[k]]
     if not out:
-        return 0.
+        return 0.0
     return np.mean(out)
 
 
@@ -199,8 +196,8 @@ def dcg_at_k(r, k, method=0):
         elif method == 1:
             return np.sum(r / np.log2(np.arange(2, r.size + 2)))
         else:
-            raise ValueError('method must be 0 or 1.')
-    return 0.
+            raise ValueError("method must be 0 or 1.")
+    return 0.0
 
 
 def ndcg_at_k(r, k, method=0):
@@ -236,19 +233,22 @@ def ndcg_at_k(r, k, method=0):
     """
     dcg_max = dcg_at_k(sorted(r, reverse=True), k, method)
     if not dcg_max:
-        return 0.
+        return 0.0
     return dcg_at_k(r, k, method) / dcg_max
 
 
 # ------------------------------------------------------------------------------------
 # custom stuff from us to avoid problem with ties
 
-def ndcg_at_k_ties(labels: list,
-                   predictions: list,
-                   k: int,
-                   method: int = 0,
-                   normalize_from_below_too: bool = False,
-                   theta=None) -> float:
+
+def ndcg_at_k_ties(
+    labels: list,
+    predictions: list,
+    k: int,
+    method: int = 0,
+    normalize_from_below_too: bool = False,
+    theta=None,
+) -> float:
     """
     See 2008 McSherry et al on how to efficiently compute NDCG with ties
     labels are ground truth
@@ -268,13 +268,19 @@ def ndcg_at_k_ties(labels: list,
     if isinstance(predictions, list):
         predictions = np.array(predictions)
 
-    assert len(labels.shape) == 1 or np.min(labels.shape) == 1, "should be 1D array or equivalent"
-    assert len(predictions.shape) == 1 or np.min(predictions.shape) == 1, "should be 1D array or equivalent"
+    assert (
+        len(labels.shape) == 1 or np.min(labels.shape) == 1
+    ), "should be 1D array or equivalent"
+    assert (
+        len(predictions.shape) == 1 or np.min(predictions.shape) == 1
+    ), "should be 1D array or equivalent"
 
     labels = labels.flatten()
     predictions = predictions.flatten()
 
-    assert np.all(labels.shape == predictions.shape), "labels and predictions should have the same shape"
+    assert np.all(
+        labels.shape == predictions.shape
+    ), "labels and predictions should have the same shape"
 
     if k is None:
         k = len(labels)
@@ -287,16 +293,18 @@ def ndcg_at_k_ties(labels: list,
     # NOTE: I have checked that dcg_at_k_ties and dcg_at_k match when there are no ties, or ties in the labels
 
     if normalize_from_below_too:
-        dcg_min = dcg_at_k_ties(np.sort(labels)[::-1], np.sort(predictions), k, method, theta=theta)
+        dcg_min = dcg_at_k_ties(
+            np.sort(labels)[::-1], np.sort(predictions), k, method, theta=theta
+        )
     else:
         dcg_min = 0
-    numerator = (dcg - dcg_min)
+    numerator = dcg - dcg_min
     assert numerator > -1e-5
     numerator = np.max((0, numerator))
     ndcg = numerator / (dcg_max - dcg_min)
     assert 1.0 >= ndcg >= 0.0, f"ndcg={ndcg} should be in [0,1]"
     if not dcg_max:
-        ndcg = 0.
+        ndcg = 0.0
     return ndcg
 
 
@@ -326,14 +334,16 @@ def dcg_helper(discount_factors, gain, k, labels, method, predictions):
 
 
 def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
-    '''
+    """
     See 2008 McSherry et al on how to efficiently compute NDCG (method=0 here) with ties (in the predictions)
     'labels' are what the "ground truth" judges assign
     'predictions' are the algorithm predictions corresponding to each label
     Also, http://en.wikipedia.org/wiki/Discounted_cumulative_gain for basic defns
-    '''
+    """
     assert isinstance(predictions, np.ndarray)
-    assert len(labels) == len(predictions), "labels and predictions should be of same length"
+    assert len(labels) == len(
+        predictions
+    ), "labels and predictions should be of same length"
     assert k <= len(labels), "k should be <= len(labels)"
 
     # order both labels and preds so that they are in order of decreasing predictive score
@@ -352,16 +362,18 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
             raise NotImplementedError()
 
     if method == 0:
-        discount_factors = get_discount_factors(len(labels), discount='log2')
+        discount_factors = get_discount_factors(len(labels), discount="log2")
     elif method == 1:
         raise Exception("need to implement: log_2(i+1)")
     elif method == 2:
-        discount_factors = get_discount_factors(len(labels), discount='linear')
+        discount_factors = get_discount_factors(len(labels), discount="linear")
     elif method == 3:
-        discount_factors = get_discount_factors(len(labels), discount='combination')
+        discount_factors = get_discount_factors(len(labels), discount="combination")
     elif method == 4:
         assert theta is not None, "need to specify theta or theta"
-        discount_factors = get_discount_factors(len(labels), discount='1/rtheta', theta=theta)
+        discount_factors = get_discount_factors(
+            len(labels), discount="1/rtheta", theta=theta
+        )
 
     else:
         raise NotImplementedError()
@@ -374,19 +386,21 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     return dcg
 
 
-def get_discount_factors(num_labels, discount='log2', theta=None):
+def get_discount_factors(num_labels, discount="log2", theta=None):
     ii_range = np.arange(num_labels) + 1
 
-    if discount == 'log2':
-        discount_factors = np.concatenate((np.array([1.0]), 1.0 / np.log2(ii_range[1:])))
-    elif discount == 'linear':
+    if discount == "log2":
+        discount_factors = np.concatenate(
+            (np.array([1.0]), 1.0 / np.log2(ii_range[1:]))
+        )
+    elif discount == "linear":
         discount_factors = -ii_range / float(num_labels) + 1.0
-    elif discount == 'combination':
+    elif discount == "combination":
         l2 = np.concatenate((np.array([1.0]), 1.0 / np.log2(ii_range[1:])))
         linear = -ii_range / float(num_labels) + 1.0
         discount_factors = np.max((l2, linear), axis=0)
-    elif discount == '1/rtheta':
-        discount_factors = 1. / (ii_range ** theta)
+    elif discount == "1/rtheta":
+        discount_factors = 1.0 / (ii_range ** theta)
     else:
         raise NotImplementedError
 
@@ -406,7 +420,7 @@ def dcg_alt(relevances, rank=20):
     relevances = np.asarray(relevances)[:rank]
     n_relevances = len(relevances)
     if n_relevances == 0:
-        return 0.
+        return 0.0
     discounts = np.log2(np.arange(n_relevances) + 2)
     return np.sum(relevances / discounts)
 
@@ -414,24 +428,21 @@ def dcg_alt(relevances, rank=20):
 def ndcg_alt(relevances, rank=20):
     best_dcg = dcg_alt(sorted(relevances, reverse=True), rank)
     if best_dcg == 0:
-        return 0.
+        return 0.0
     return dcg_alt(relevances, rank) / best_dcg
 
 
-# def ndcg_bootstrap_test(preds1, preds2, true_labels, num_bootstrap, method, k, normalize_from_below_too, seed="78923"):
-#     """
-#     Basic idea: use bootstrap to get the standard deviation of the difference in NDCG,
-#     and then create a z-statistic, z = (ndcg1-ndcg2)/std(ndcg1-ndcg2), and then compute
-#     a p-value under the assumption that this is normally distributed.
-#     Robin et al . BMC Bioinformatics 2011, 12:77
-#     http://www.biomedcentral.com/1471-2105/12/77
-#     """
-#
-#     return pv
-
-
-def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, normalize_from_below_too, theta=None,
-                             balance_zeros=True):
+def ndcg_at_k_swap_perm_test(
+    preds1,
+    preds2,
+    true_labels,
+    nperm,
+    method,
+    k,
+    normalize_from_below_too,
+    theta=None,
+    balance_zeros=True,
+):
     # pVal is the probability that we would observe as big an AUC diff as we
     # did if the ROC curves were drawn from the null hypothesis (which is that
     # one model does not perform better than the other)
@@ -462,7 +473,9 @@ def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, norm
         true_labels = true_labels.flatten()
 
     assert len(preds1) == len(preds2), "need same number of preditions from each model"
-    assert len(preds1) == len(true_labels), "need same number of preditions in truth and predictions"
+    assert len(preds1) == len(
+        true_labels
+    ), "need same number of preditions in truth and predictions"
     N = len(preds1)
 
     # re-sort all by truth ordering so that when swap they are aligned
@@ -474,10 +487,22 @@ def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, norm
     ranks1 = sp.stats.mstats.rankdata(preds1)
     ranks2 = sp.stats.mstats.rankdata(preds2)
 
-    ndcg1 = ndcg_at_k_ties(true_labels, ranks1, k=k, method=method, normalize_from_below_too=normalize_from_below_too,
-                           theta=theta)
-    ndcg2 = ndcg_at_k_ties(true_labels, ranks2, k=k, method=method, normalize_from_below_too=normalize_from_below_too,
-                           theta=theta)
+    ndcg1 = ndcg_at_k_ties(
+        true_labels,
+        ranks1,
+        k=k,
+        method=method,
+        normalize_from_below_too=normalize_from_below_too,
+        theta=theta,
+    )
+    ndcg2 = ndcg_at_k_ties(
+        true_labels,
+        ranks2,
+        k=k,
+        method=method,
+        normalize_from_below_too=normalize_from_below_too,
+        theta=theta,
+    )
 
     real_ndcg_diff = {}
     perm_ndcg_diff = {}
@@ -489,7 +514,9 @@ def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, norm
         pval[theta] = 1.0
     else:
         zero_ind = true_labels == 0
-        assert np.sum(zero_ind) < len(zero_ind), "balancing assumes there are more zeros than ones"
+        assert np.sum(zero_ind) < len(
+            zero_ind
+        ), "balancing assumes there are more zeros than ones"
 
         for t in range(nperm):
             pair_ind_to_swap = np.random.rand(N) < 0.5
@@ -500,10 +527,22 @@ def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, norm
             ranks2_perm = ranks2.copy()
             ranks2_perm[pair_ind_to_swap] = ranks1[pair_ind_to_swap]
 
-            ndcg1_perm = ndcg_at_k_ties(true_labels, ranks1_perm, k=k, method=method,
-                                        normalize_from_below_too=normalize_from_below_too, theta=theta)
-            ndcg2_perm = ndcg_at_k_ties(true_labels, ranks2_perm, k=k, method=method,
-                                        normalize_from_below_too=normalize_from_below_too, theta=theta)
+            ndcg1_perm = ndcg_at_k_ties(
+                true_labels,
+                ranks1_perm,
+                k=k,
+                method=method,
+                normalize_from_below_too=normalize_from_below_too,
+                theta=theta,
+            )
+            ndcg2_perm = ndcg_at_k_ties(
+                true_labels,
+                ranks2_perm,
+                k=k,
+                method=method,
+                normalize_from_below_too=normalize_from_below_too,
+                theta=theta,
+            )
 
             for theta in theta:
                 tmp_diff = np.abs(ndcg1_perm[theta] - ndcg2_perm[theta])
@@ -525,7 +564,6 @@ def ndcg_at_k_swap_perm_test(preds1, preds2, true_labels, nperm, method, k, norm
 
 if __name__ == "__main__":
     import pickle
-    # import matplotlib.pyplot as plt
     from azimuth.elevation import metrics
 
     simulated_data = True
@@ -547,11 +585,14 @@ if __name__ == "__main__":
     allp = np.nan * np.zeros((len(theta_range) + 1, T))
 
     if not simulated_data:
-        print("loading up saved data...")  # two-fold CV data from CRISPR off-target GUIDE-SEQ
-        with open(r'\\nerds5\kevin\from_nicolo\gs.pickle', 'rb') as f:
-            predictions, truth_all = pickle.load(f)
-        print("done.")
-        N = len(truth_all[0])
+        # print(
+        #     "loading up saved data..."
+        # )  # two-fold CV data from CRISPR off-target GUIDE-SEQ
+        # with open(r"\\nerds5\kevin\from_nicolo\gs.pickle", "rb") as f:
+        #     predictions, truth_all = pickle.load(f)
+        # print("done.")
+        # N = len(truth_all[0])
+        pass # that gs.pickle file was not in the source repo
 
     for t in range(T):
 
@@ -576,21 +617,12 @@ if __name__ == "__main__":
             weights_array = truth.copy()
             weights_array += w
 
-            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = metrics.spearman_weighted_swap_perm_test(pred1,
-                                                                                                             pred2,
-                                                                                                             truth,
-                                                                                                             nperm,
-                                                                                                             weights_array)
+            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = metrics.spearman_weighted_swap_perm_test(
+                pred1, pred2, truth, nperm, weights_array
+            )
 
             allp[i, t] = pvaltmp
             t1 = time.time()
-
-    # for i, theta in enumerate(theta_range.tolist()):
-    #     mytitle = f"Norm. hist p-values Steiger w weighted Spearman\n {T} null samples, N={N}, weight={str(theta)}"
-    #     ut.qqplotp(allp[i, :], dohist=True, numbins=10, figsize=[6, 6], title=mytitle, markersize=5)
-    #     plt.show()
-    #
-    # set_trace()
 
     truth = np.array([3, 4, 2, 1, 0, 0, 0])
     pred1 = np.array([3, 4, 2, 1, 0, 0, 0])
@@ -609,23 +641,25 @@ if __name__ == "__main__":
     normalize_from_below_too = True
     k = len(pred3)
 
-    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(pred1, pred2, truth, nperm, method, k,
-                                                                                  normalize_from_below_too, theta=theta)
+    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(
+        pred1, pred2, truth, nperm, method, k, normalize_from_below_too, theta=theta
+    )
     print(f"ndcg1={ndcg1}, ndcg2={ndcg2}, ndcg_diff={real_ndcg_diff}, p={pval}")
 
-    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(pred1, pred1, truth, nperm, method, k,
-                                                                                  normalize_from_below_too, theta=theta)
+    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(
+        pred1, pred1, truth, nperm, method, k, normalize_from_below_too, theta=theta
+    )
     print(f"ndcg1={ndcg1}, ndcg2={ndcg2}, ndcg_diff={real_ndcg_diff}, p={pval}")
 
-    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(pred1, pred4, truth, nperm, method, k,
-                                                                                  normalize_from_below_too, theta=theta)
+    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(
+        pred1, pred4, truth, nperm, method, k, normalize_from_below_too, theta=theta
+    )
     print(f"ndcg1={ndcg1}, ndcg2={ndcg2}, ndcg_diff={real_ndcg_diff}, p={pval}")
 
-    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(pred1, pred5, truth, nperm, method, k,
-                                                                                  normalize_from_below_too, theta=theta)
+    pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2 = ndcg_at_k_swap_perm_test(
+        pred1, pred5, truth, nperm, method, k, normalize_from_below_too, theta=theta
+    )
     print(f"ndcg1={ndcg1}, ndcg2={ndcg2}, ndcg_diff={real_ndcg_diff}, p={pval}")
-
-    # set_trace()
 
     print(ndcg_at_k_ties(truth4, pred2, k, method=3, normalize_from_below_too=True))
 
