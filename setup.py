@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="Azimuth",
-    version="3.0",
+    version="3.1",
     author="Nicolo Fusi, Jennifer Listgarten, and Miles Smith",
     author_email="fusi@microsoft.com, jennl@microsoft.com, mileschristiansmith@gmail.com",
     description="Machine Learning-Based Predictive Modelling of CRISPR/Cas9 guide efficiency",
