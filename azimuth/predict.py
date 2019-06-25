@@ -1,21 +1,16 @@
-import copy
-import multiprocessing
-import time
+from copy import deepcopy
+from multiprocessing import Pool
+from time import time
 
 import numpy as np
-import sklearn
-import sklearn.metrics
+from scipy.stats import spearmanr
 from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
-from azimuth import metrics as ranking_metrics
-from azimuth import util
-from azimuth.models import DNN
-from azimuth.models import GP
-from azimuth.models import baselines
-from azimuth.models import ensembles
-from azimuth.models import regression
-
-import scipy.stats as st
+from azimuth.metrics import ndcg_at_k_ties
+from azimuth.models import (DNN, GP, baselines, ensembles, regression)
+from azimuth.util import spearmanr_nonan, concatenate_feature_sets
 
 
 def fill_in_truth_and_predictions(
@@ -76,28 +71,6 @@ def construct_filename(learn_options, TEST):
     return filename
 
 
-def print_summary(global_metric, results, learn_options, feature_sets, flags):
-    print("\nSummary:")
-    print(learn_options)
-    print(f"\t\tglobal {learn_options['metric']}={global_metric:.{2}}")
-    print(
-        f"\t\tmedian {learn_options['metric']} across folds={np.median(results[0]):.{2}}"
-    )
-    print(f"\t\torder={learn_options['order']}")
-    if "kerntype" in learn_options:
-        print(f"\t\tkern type = {learn_options['kerntype']}")
-    if "degree" in learn_options:
-        print(f"\t\tdegree={learn_options['degree']}")
-    print(f"\t\ttarget_name={learn_options['target_name']}")
-
-    for k in flags.keys():
-        print(f"\t\t{k}={learn_options['target_name']}")
-
-    print("\t\tfeature set:")
-    for key in feature_sets.keys():
-        print(f"\t\t\t{key}")
-    print(f"\t\ttotal # features={results[4]}")
-
 
 def extract_fpr_tpr_for_fold(aucs, y_binary, test, y_pred):
     assert len(np.unique(y_binary)) <= 2, "if using AUC need binary targets"
@@ -107,7 +80,7 @@ def extract_fpr_tpr_for_fold(aucs, y_binary, test, y_pred):
 
 
 def extract_NDCG_for_fold(metrics, y_ground_truth, test, y_pred, learn_options):
-    NDCG_fold = ranking_metrics.ndcg_at_k_ties(
+    NDCG_fold = ndcg_at_k_ties(
         y_ground_truth[test].flatten(), y_pred.flatten(), learn_options["NDGC_k"]
     )
     metrics.append(NDCG_fold)
@@ -115,7 +88,7 @@ def extract_NDCG_for_fold(metrics, y_ground_truth, test, y_pred, learn_options):
 
 def extract_spearman_for_fold(metrics, y_ground_truth, test, y_pred):
     spearman = np.nan_to_num(
-        st.spearmanr(y_ground_truth[test].flatten(), y_pred.flatten())[0]
+        spearmanr(y_ground_truth[test].flatten(), y_pred.flatten())[0]
     )
     assert not np.isnan(spearman), "found nan spearman"
     metrics.append(spearman)
@@ -179,9 +152,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         "xu_et_al",
     ]
 
-    assert learn_options["method"] in allowed_methods, "invalid method: {}".format(
-        learn_options["method"]
-    )
+    assert learn_options["method"] in allowed_methods, "invalid method: {learn_options['method']}"
     assert (
         learn_options["method"] == "linreg"
         and learn_options["penalty"] == "L2"
@@ -192,12 +163,12 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     filename = construct_filename(learn_options, TEST)
 
     print("Cross-validating genes...")
-    t2 = time.time()
+    t2 = time()
 
     y = np.array(y_all[learn_options["target_name"]].values[:, None], dtype=np.float64)
 
     # concatenate feature sets in to one nparray, and get dimension of each
-    inputs, dim, dimsum, feature_names = util.concatenate_feature_sets(feature_sets)
+    inputs, dim, dimsum, feature_names = concatenate_feature_sets(feature_sets)
 
     if not CV:
         assert (
@@ -211,7 +182,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             "can't use extra pairs with stratified CV, "
             "need to figure out how to properly account for genes affected by two drugs"
         )
-        label_encoder = sklearn.preprocessing.LabelEncoder()
+        label_encoder = LabelEncoder()
         label_encoder.fit(y_all["Target gene"].values)
         gene_classes = label_encoder.transform(y_all["Target gene"].values)
         if "n_folds" in learn_options.keys():
@@ -224,7 +195,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         else:
             n_splits = len(learn_options["all_genes"])
 
-        skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True)
         cv = skf.split(np.zeros(len(gene_classes), dtype=np.bool), gene_classes)
         fold_labels = ["fold%d" % i for i in range(1, n_splits + 1)]
         if learn_options["num_genes_remove_train"] is not None:
@@ -276,19 +247,13 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 for j, gene in enumerate(y_all["Target gene"]):
                     if j in train and gene in genes_to_keep:
                         filtered_train.append(j)
-                cv_i_orig = copy.deepcopy(cv[i])
+                cv_i_orig = deepcopy(cv[i])
                 cv[i] = (filtered_train, test)
                 if learn_options["num_genes_remove_train"] == 0:
                     assert np.all(cv_i_orig[0] == cv[i][0])
                     assert np.all(cv_i_orig[1] == cv[i][1])
-                print(
-                    "# train/train after/before is {}, {}".format(
-                        len(cv[i][0]), len(cv_i_orig[0])
-                    )
-                )
-                print(
-                    f"# test/test after/before is {len(cv[i][1])}, {len(cv_i_orig[1])}"
-                )
+                print(f"# train/train after/before is {len(cv[i][0])}, {len(cv_i_orig[0])}")
+                print(f"# test/test after/before is {len(cv[i][1])}, {len(cv_i_orig[1])}")
     else:
         raise Exception("invalid cv options given: %s" % learn_options["cv"])
 
@@ -316,7 +281,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         num_proc = np.min([num_proc, len(cv)])
         print(f"using multiprocessing with {num_proc} procs -- one for each fold")
         jobs = []
-        pool = multiprocessing.Pool(processes=num_proc)
+        pool = Pool(processes=num_proc)
         for i, fold in enumerate(cv):
             train, test = fold
             print(
@@ -519,7 +484,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
 
             print(f"\t\tRMSE: {np.sqrt(((y_pred - y[test]) ** 2).mean())}")
             print(
-                f"\t\tSpearman correlation: {np.nan_to_num(st.spearmanr_nonan(y[test], y_pred)[0])}"
+                f"\t\tSpearman correlation: {np.nan_to_num(spearmanr_nonan(y[test], y_pred)[0])}"
             )
             print(f"\t\tfinished fold/gene {i + 1} of {len(fold_labels)}")
 
@@ -529,6 +494,6 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         f"\t\tmedian {learn_options['training_metric']} across gene folds: {cv_median_metric[-1]:.3f}"
     )
 
-    t3 = time.time()
+    t3 = time()
     print(f"\t\tElapsed time for cv is {(t3 - t2):.{2}} seconds")
     return metrics, gene_pred, fold_labels, m, dimsum, filename, feature_names

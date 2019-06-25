@@ -1,17 +1,16 @@
+from numbers import Number
+
 import numpy as np
-import sklearn
-import scipy.stats as st
 from numpy.core.multiarray import ndarray
+from scipy.stats import spearmanr
 from sklearn import linear_model
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_curve, auc
-from azimuth.util import spearmanr_nonan
-from azimuth.metrics import rank_data, ndcg_at_k_ties
-import azimuth.predict
-import numbers
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
-from glmnet_python import glmnet
-
+from azimuth.metrics import ndcg_at_k_ties
+from azimuth import predict
 
 def ARDRegression_on_fold(train, test, y, X):
     """
@@ -136,20 +135,16 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     best_alpha = learn_options["alpha"][max_score_ind[0]]
 
     best_alpha = best_alpha[0]
-    if not isinstance(best_alpha, numbers.Number):
-        raise Exception("best_alpha must be a number but is %s" % type(best_alpha))
+    if not isinstance(best_alpha, Number):
+        raise Exception(f"best_alpha must be a number but is {type(best_alpha)}")
 
-    print(
-        "\tbest alpha is {} from range={}".format(
-            best_alpha, learn_options["alpha"][[0, -1]]
-        )
-    )
+    print("\tbest alpha is {best_alpha} from range={learn_options['alpha'][[0, -1]]}")
     max_perf = np.nanmax(performance)
 
     if max_perf < 0.0:
         raise Exception("performance is negative")
 
-    print("\t\tbest performance is {}".format(np.nanmax(performance)))
+    print(f"\t\tbest performance is {np.nanmax(performance)}")
 
     clf = linear_model.LogisticRegression(
         penalty=learn_options["penalty"],
@@ -232,7 +227,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
 
                 elif learn_options["training_metric"] == "spearmanr":
                     spearman = np.nan_to_num(
-                        st.spearmanr(
+                        spearmanr(
                             y_all[learn_options["ground_truth_label"]][train][
                                 test_inner
                             ],
@@ -291,9 +286,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
     #     raise Exception("Uh... something went wrong with figuring out 'best_alpha' at line 227 in regression.py.  Fix it.")
 
     if learn_options["penalty"] == "EN":
-        print(
-            "\t\tbest l1_ratio is {} from range={}".format(best_l1r, l1_ratio[[0, -1]])
-        )
+        print("\t\tbest l1_ratio is {best_l1r} from range={l1_ratio[[0, -1]]}")
     max_perf = np.nanmax(performance)
 
     if max_perf < 0.0:
@@ -370,7 +363,7 @@ def get_weights(learn_options, fold, y, y_all):
 
 
 def set_up_inner_folds(learn_options: dict, y):
-    label_encoder = sklearn.preprocessing.LabelEncoder()
+    label_encoder = LabelEncoder()
     label_encoder.fit(y["Target gene"].values)
     gene_classes = label_encoder.transform(y["Target gene"].values)
     n_genes = len(np.unique(gene_classes))
@@ -387,11 +380,11 @@ def set_up_inner_folds(learn_options: dict, y):
             n_splits = len(np.unique(gene_classes))
         else:
             n_splits = learn_options["n_folds"]
-        skf = sklearn.model_selection.StratifiedKFold(n_splits=n_splits, shuffle=True)
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True)
         cv = skf.split(np.zeros(len(gene_classes), dtype=np.bool), gene_classes)
     elif learn_options["cv"] == "gene":
         gene_list = np.unique(y["Target gene"].values)
         for gene in gene_list:
-            cv.append(azimuth.predict.get_train_test(gene, y))
+            cv.append(predict.get_train_test(gene, y))
     n_folds = len(cv)
     return cv, n_folds

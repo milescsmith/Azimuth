@@ -1,28 +1,19 @@
-import copy
-import os
-import pickle
+from copy import deepcopy
 from math import log10
+from os import path
 
 import numpy as np
-import pandas
+import pandas as pd
+from dill import load, dump
+from pkg_resources import resource_filename
 
-import azimuth.features.featurization as feat
-import azimuth.load_data
-import azimuth.local_multiprocessing
-import azimuth.predict as apd
-import azimuth.util
+from azimuth.features.featurization import featurize_data
+from azimuth.load_data import get_V3_genes, from_file
+from azimuth.local_multiprocessing import configure
+from azimuth.predict import cross_validate
+from azimuth.util import concatenate_feature_sets, convert_to_thirty_one
 
-
-def check_feature_set_dims(feature_sets):
-    F2 = None
-    for feature_set in feature_sets.keys():
-        F = feature_sets[feature_set].shape[0]
-        if F2 is None:
-            F = F2
-        assert F == F2, f"not same # individuals for feature {feature_set}"
-
-    assert feature_sets != {}, "features are empty, check learn_options"
-
+DATA_PATH = resource_filename("azimuth", "saved_models/")
 
 def set_target(learn_options, classification):
     assert (
@@ -235,7 +226,7 @@ def shared_setup(learn_options, order, test):
     if "num_thread_per_proc" not in learn_options.keys():
         learn_options["num_thread_per_proc"] = None
 
-    num_proc = azimuth.local_multiprocessing.configure(
+    num_proc = configure(
         test=test,
         num_proc=learn_options["num_proc"],
         num_thread_per_proc=learn_options["num_thread_per_proc"],
@@ -322,10 +313,10 @@ def setup(
     )
     if learn_options["testing_non_binary_target_name"] not in ["ranks", "raw", "thrs"]:
         raise Exception(
-            'learn_otions["testing_non_binary_target_name"] must be in ["ranks", "raw", "thrs"]'
+            'learn_options["testing_non_binary_target_name"] must be in ["ranks", "raw", "thrs"]'
         )
 
-    x_df, Y, gene_position, target_genes = azimuth.load_data.from_file(
+    x_df, Y, gene_position, target_genes = from_file(
         data_file=data_file, data_file2=None, learn_options=learn_options
     )
     learn_options["all_genes"] = target_genes
@@ -342,7 +333,7 @@ def setup(
             "back to 30mer with a right shift)"
         )
         for i in range(x_df.shape[0]):
-            x_df["30mer"].iloc[i] = azimuth.util.convert_to_thirty_one(
+            x_df["30mer"].iloc[i] = convert_to_thirty_one(
                 x_df.iloc[i]["30mer"], x_df.index.values[i][1], x_df.iloc[i]["Strand"]
             )
 
@@ -358,7 +349,7 @@ def setup(
         assert len(x_df["30mer"].values[0]) == expected_length
         x_df["30mer"] = x_df["30mer"].apply(lambda seq: seq[seq_start:seq_end])
 
-    feature_sets = feat.featurize_data(
+    feature_sets = featurize_data(
         x_df,
         learn_options,
         Y,
@@ -442,50 +433,50 @@ def run_models(
 
                     if model == "L1":
                         learn_options_model = L1_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "L2":
                         learn_options_model = L2_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "elasticnet":
                         learn_options_model = elasticnet_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "linreg":
                         learn_options_model = linreg_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "logregL1":
                         learn_options_model = logregL1_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "RandomForest":
                         learn_options_model = RF_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "SVC":
                         learn_options_model = SVC_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "doench":
                         learn_options_model = doench_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "sgrna_from_doench":
                         learn_options_model = sgrna_from_doench_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "xu_et_al":
                         learn_options_model = xu_et_al_setup(
-                            copy.deepcopy(learn_options), set_target_fn=set_target_fn
+                            deepcopy(learn_options), set_target_fn=set_target_fn
                         )
                     elif model == "AdaBoost" or "AdaBoostClassifier":
                         for learning_rate in adaboost_learning_rates:
                             for num_estimators in adaboost_num_estimators:
                                 for max_depth in adaboost_max_depths:
                                     learn_options_model = adaboost_setup(
-                                        copy.deepcopy(learn_options),
+                                        deepcopy(learn_options),
                                         learning_rate=learning_rate,
                                         num_estimators=num_estimators,
                                         max_depth=max_depth,
@@ -502,7 +493,7 @@ def run_models(
                             + f"_ord{learn_options_set[learn_options_str]['order']}_{learn_options_str}"
                         )
 
-                    results[model_string] = apd.cross_validate(
+                    results[model_string] = cross_validate(
                         Y,
                         feature_sets,
                         learn_options=learn_options_model,
@@ -524,21 +515,21 @@ def run_models(
                     length_audit=length_audit,
                 )
                 if model == "mean":
-                    learn_options_model = mean_setup(copy.deepcopy(learn_options))
+                    learn_options_model = mean_setup(deepcopy(learn_options))
                 elif model == "random":
-                    learn_options_model = random_setup(copy.deepcopy(learn_options))
+                    learn_options_model = random_setup(deepcopy(learn_options))
                 elif model == "DNN":
-                    learn_options_model = DNN_setup(copy.deepcopy(learn_options))
+                    learn_options_model = DNN_setup(deepcopy(learn_options))
                 elif model == "GP":
                     for likelihood in GP_likelihoods:
                         for degree in WD_kernel_degrees:
                             learn_options_model = GP_setup(
-                                copy.deepcopy(learn_options),
+                                deepcopy(learn_options),
                                 likelihood=likelihood,
                                 degree=degree,
                             )
                             model_string = f"{model}_{likelihood}_degree{degree}_{learn_options_str}"
-                            results[model_string] = apd.cross_validate(
+                            results[model_string] = cross_validate(
                                 Y,
                                 feature_sets,
                                 learn_options=learn_options_model,
@@ -549,10 +540,10 @@ def run_models(
                 else:
                     raise NotImplementedError(f"model {model} not supported")
 
-                # "GP" already calls apd.cross_validate() and has its own model_string, so skip this.
+                # "GP" already calls cross_validate() and has its own model_string, so skip this.
                 if model != "GP":
                     model_string = model + "_%s" % learn_options_str
-                    results[model_string] = apd.cross_validate(
+                    results[model_string] = cross_validate(
                         Y,
                         feature_sets,
                         learn_options=learn_options_model,
@@ -563,58 +554,6 @@ def run_models(
             all_learn_options[model_string] = learn_options_model
 
     return results, all_learn_options
-
-
-def pickle_runner_results(
-    exp_name, results, all_learn_options, relpath="/../" + "results"
-):
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath) + relpath
-    if not os.path.exists(dname):
-        os.makedirs(dname)
-        print(f"Created directory: {str(dname)}")
-    if exp_name is None:
-        exp_name = results.keys()[0]
-    myfile = f"{dname}/{exp_name}.pickle"
-    with open(myfile, "wb") as f:
-        print(f"writing results to {myfile}")
-        pickle.dump((results, all_learn_options), f, -1)
-
-
-def runner(
-    models,
-    learn_options,
-    GP_likelihoods=None,
-    orders=None,
-    WD_kernel_degrees=None,
-    where="local",
-    cluster_user="fusi",
-    cluster="RR1-N13-09-H44",
-    test=False,
-    exp_name=None,
-    **kwargs,
-):
-    if where == "local":
-        results, all_learn_options = run_models(
-            models,
-            orders=orders,
-            GP_likelihoods=GP_likelihoods,
-            learn_options_set=learn_options,
-            WD_kernel_degrees=WD_kernel_degrees,
-            test=test,
-            **kwargs,
-        )
-        all_metrics, gene_names = azimuth.util.get_all_metrics(results, learn_options)
-        azimuth.util.plot_all_metrics(
-            all_metrics, gene_names, all_learn_options, save=True
-        )
-
-        # for non-local (i.e. cluster), the comparable code is in cli_run_model.py
-        pickle_runner_results(exp_name, results, all_learn_options)
-
-        return results, all_learn_options, all_metrics, gene_names
-
-        return tempdir, clust_filename, user  # , stdout, stderr
 
 
 def save_final_model_V3(
@@ -634,8 +573,8 @@ def save_final_model_V3(
     if learn_options is None:
         learn_options = {
             "V": 3,
-            "train_genes": azimuth.load_data.get_V3_genes(),
-            "test_genes": azimuth.load_data.get_V3_genes(),
+            "train_genes": get_V3_genes(),
+            "test_genes": get_V3_genes(),
             "testing_non_binary_target_name": "ranks",
             "include_pi_nuc_feat": True,
             "gc_features": True,
@@ -678,7 +617,7 @@ def save_final_model_V3(
     model = list(results.values())[0][3][0]
 
     with open(filename, "wb") as f:
-        pickle.dump((model, learn_options), f, -1)
+        dump((model, learn_options), f, -1)
 
     return model
 
@@ -694,17 +633,21 @@ def predict(
     learn_options_override=None,
 ):
     """
-    Args:
-        seq: numpy array of 30 nt sequences.
-        aa_cut: numpy array of amino acid cut positions (optional).
-        percent_peptide: numpy array of percent peptide (optional).
-        model: model instance to use for prediction (optional).
-        model_file: file name of pickled model to use for prediction (optional).
-        pam_audit: check PAM of each sequence.
-        length_audit: check length of each sequence.
-        learn_options_override: a dictionary indicating which learn_options to override (optional).
 
-    Returns: a numpy array of predictions.
+    Parameters
+    ----------
+    seq : numpy array of 30 nt sequences.
+    aa_cut : numpy array of amino acid cut positions (optional).
+    percent_peptide : numpy array of percent peptide (optional).
+    model : model instance to use for prediction (optional).
+    model_file : file name of pickled model to use for prediction (optional).
+    pam_audit : check PAM of each sequence.
+    length_audit : check length of each sequence.
+    learn_options_override : a dictionary indicating which learn_options to override (optional).
+
+    Return
+    ------
+    :class:`~np.array`
     """
     # assert not (model is None and model_file is None), "you have to specify either a model or a model_file"
     assert isinstance(seq, np.ndarray), "Please ensure seq is a numpy array"
@@ -730,9 +673,6 @@ def predict(
         ), "percent_peptide needs to be a real number"
 
     if model_file is None:
-        azimuth_saved_model_dir = os.path.join(
-            os.path.dirname(azimuth.__file__), "saved_models"
-        )
         if np.any(percent_peptide == -1) or (
             percent_peptide is None and aa_cut is None
         ):
@@ -742,11 +682,11 @@ def predict(
             print("No model file specified, using V3_model_full")
             model_name = "V3_model_full.pickle"
 
-        model_file = os.path.join(azimuth_saved_model_dir, model_name)
+        model_file = path.join(DATA_PATH, model_name)
 
     if model is None:
         with open(model_file, "rb") as f:
-            model, learn_options = pickle.load(f)
+            model, learn_options = load(f)
     else:
         model, learn_options = model
 
@@ -754,7 +694,7 @@ def predict(
 
     learn_options = override_learn_options(learn_options_override, learn_options)
 
-    x_df = pandas.DataFrame(
+    x_df = pd.DataFrame(
         columns=["30mer", "Strand"],
         data=list(zip(seq, ["NA" for x in range(len(seq))])),
     )
@@ -762,27 +702,25 @@ def predict(
     if np.all(percent_peptide != -1) and (
         percent_peptide is not None and aa_cut is not None
     ):
-        gene_position = pandas.DataFrame(
+        gene_position = pd.DataFrame(
             columns=["Percent Peptide", "Amino Acid Cut position"],
             data=list(zip(percent_peptide, aa_cut)),
         )
     else:
-        gene_position = pandas.DataFrame(
+        gene_position = pd.DataFrame(
             columns=["Percent Peptide", "Amino Acid Cut position"],
             data=list(zip(np.ones(seq.shape[0]) * -1, np.ones(seq.shape[0]) * -1)),
         )
 
-    feature_sets = feat.featurize_data(
+    feature_sets = featurize_data(
         x_df,
         learn_options,
-        pandas.DataFrame(),
+        pd.DataFrame(),
         gene_position,
         pam_audit=pam_audit,
         length_audit=length_audit,
     )
-    inputs, dim, dimsum, feature_names = azimuth.util.concatenate_feature_sets(
-        feature_sets
-    )
+    inputs, dim, dimsum, feature_names = concatenate_feature_sets(feature_sets)
 
     # call to scikit-learn, returns a vector of predicted values
     preds = model.predict(inputs)
@@ -820,7 +758,7 @@ def fill_learn_options(learn_options_used_to_fill, learn_options_with_possible_m
 
 def write_results(predictions, file_to_predict):
     newfile = file_to_predict.replace(".csv", ".pred.csv")
-    data = pandas.read_csv(file_to_predict)
+    data = pd.read_csv(file_to_predict)
     data["predictions"] = predictions
     data.to_csv(newfile)
     print(f"wrote results to {newfile}")
@@ -838,8 +776,8 @@ if __name__ == "__main__":
 
     learn_options = {
         "V": 3,
-        "train_genes": azimuth.load_data.get_V3_genes(),
-        "test_genes": azimuth.load_data.get_V3_genes(),
+        "train_genes": get_V3_genes(),
+        "test_genes": get_V3_genes(),
         "target_name": "score_drug_gene_rank",
         "testing_non_binary_target_name": "ranks",
         "include_pi_nuc_feat": True,

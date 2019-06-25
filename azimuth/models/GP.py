@@ -1,7 +1,7 @@
 import numpy as np
-import GPy
+from GPy.models import WarpedGP, GPRegression
 from GPy.kern import Linear, RBF, Bias
-from .gpy_ssk import WeightedDegree
+from azimuth.models.gpy_ssk import WeightedDegree
 
 
 def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
@@ -97,9 +97,9 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
     kern += Bias(X.shape[1])
 
     if learn_options["warpedGP"]:
-        m = GPy.models.WarpedGP(X[train], y[train], kernel=kern)
+        m = WarpedGP(X[train], y[train], kernel=kern)
     else:
-        m = GPy.models.GPRegression(X[train], y[train], kernel=kern)
+        m = GPRegression(X[train], y[train], kernel=kern)
 
     m.optimize_restarts(3)
     y_pred, y_uncert = m.predict(X[test])

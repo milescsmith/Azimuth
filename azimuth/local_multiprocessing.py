@@ -1,5 +1,7 @@
-import multiprocessing
-import numpy as np
+from multiprocessing import cpu_count
+
+from numpy import floor
+
 
 # from mkl import set_num_threads # mkl is never used outside of this
 
@@ -16,13 +18,13 @@ def configure(
     num_jobs is typically the # of genes we are parallelizing over
     """
     if num_proc is None:
-        num_proc = multiprocessing.cpu_count() - subtract
+        num_proc = cpu_count() - subtract
 
     if num_jobs > num_proc:
         num_jobs = num_proc
 
     if num_thread_per_proc is None:
-        num_thread_per_proc = int(np.floor(num_proc / num_jobs))
+        num_thread_per_proc = int(floor(num_proc / num_jobs))
 
     if test:
         num_jobs = 1

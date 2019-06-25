@@ -2,9 +2,9 @@ from os import path
 
 import numpy as np
 import pandas as pd
-import scipy as sp
-import scipy.stats
-from . import util
+from scipy.stats import pearsonr
+
+from azimuth import util
 
 CUR_DIR = path.dirname(path.abspath(__file__))
 
@@ -62,7 +62,7 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
         # check that data is consistent with sgRNA score
         xx = x_df["sgRNA Score"].values
         yy = y_df["score_drug_gene_rank"].values
-        rr, pp = sp.stats.pearsonr(xx, yy)
+        rr, pp = pearsonr(xx, yy)
         assert (
             rr > 0
         ), "data processing has gone wrong as correlation with previous predictions is negative"

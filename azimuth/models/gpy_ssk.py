@@ -4,7 +4,7 @@ from GPy.models import GPRegression
 from paramz.param import Param
 from paramz.transformations import Logexp
 
-from .ssk import WD_K
+from azimuth.models.ssk import WD_K
 
 
 class WeightedDegree(Kern):

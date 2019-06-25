@@ -13,7 +13,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
 from sklearn.tree import DecisionTreeRegressor
 
-from .regression import linreg_on_fold
+from azimuth.models.regression import linreg_on_fold
 
 
 def spearman_scoring(clf, X, y):

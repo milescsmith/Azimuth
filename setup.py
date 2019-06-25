@@ -24,6 +24,8 @@ setup(
     package_dir={"azimuth": "azimuth"},
     package_data={"azimuth": ["saved_models/*.*", "data/*.*"]},
     install_requires=[
+        "click",
+        "biopython",
         "scipy",
         "numpy",
         "scikit-learn",
@@ -33,5 +35,6 @@ setup(
         "paramz",
         "theanets @ git+https://github.com/lmjohns3/theanets",
         "glmnet_py",
+        "dill"
     ],
 )

@@ -1,9 +1,10 @@
 import numpy as np
-import pandas
-import sklearn
-import sklearn.linear_model
+import pandas as pd
+from sklearn.metrics import auc, roc_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import StratifiedKFold
 
 
 def mean_on_fold(train, test, y):
@@ -15,7 +16,7 @@ def random_on_fold(test):
 
 
 def xu_et_al_on_fold(test, X, learn_options):
-    coef = pandas.read_csv(learn_options["xu_matrix_file"], skiprows=1, delimiter="\t")
+    coef = pd.read_csv(learn_options["xu_matrix_file"], skiprows=1, delimiter="\t")
     coef = coef[["A", "T", "C", "G"]]  # swap columns so that they are in correct order
     coef = coef.values.flatten()[:, None]
     X = X.copy()
@@ -34,10 +35,10 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
     ]
     y_bin = y_all[learn_options["binary target name"]].values[:, None]
 
-    label_encoder = sklearn.preprocessing.LabelEncoder()
+    label_encoder = LabelEncoder()
     label_encoder.fit(y_all["Target gene"].values[train])
     gene_classes = label_encoder.transform(y_all["Target gene"].values[train])
-    skf = sklearn.model_selection.StratifiedKFold(n_splits=10, shuffle=True)
+    skf = StratifiedKFold(n_splits=10, shuffle=True)
     cv = skf.split(np.zeros(len(gene_classes), dtype=np.bool), gene_classes)
 
     cv_results = np.zeros((10, len(penalty)))
@@ -67,10 +68,10 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
                 X[train][test_inner][:, non_zero_coeff.flatten()]
             )[:, 1]
 
-            fpr, tpr, _ = sklearn.metrics.roc_curve(y_bin[train][test_inner], y_test)
+            fpr, tpr, _ = roc_curve(y_bin[train][test_inner], y_test)
             assert np.nan not in fpr, "found nan fpr"
             assert np.nan not in tpr, "found nan tpr"
-            roc_auc = sklearn.metrics.auc(fpr, tpr)
+            roc_auc = auc(fpr, tpr)
             if verbose:
                 print(j, i, roc_auc)
             cv_results[j][i] = roc_auc

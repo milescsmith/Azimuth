@@ -1,18 +1,18 @@
-import itertools
-import pickle
-import sys
-import time
+from itertools import product
+from sys import maxsize
+from time import time
 from typing import List
 
 import Bio.Seq as Seq
 import Bio.SeqUtils as SeqUtil
 import Bio.SeqUtils.MeltingTemp as Tm
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from dill import load, dump
 from pandas import DataFrame, Series, concat
-import sklearn
 
 from azimuth import util
-from .microhomology import compute_score
+from azimuth.features.microhomology import compute_score
 
 
 def featurize_data(
@@ -32,7 +32,7 @@ def featurize_data(
 
     if not quiet:
         print("Constructing features...")
-    t0 = time.time()
+    t0 = time()
 
     feature_sets = {}
 
@@ -68,8 +68,8 @@ def featurize_data(
     if learn_options["include_gene_effect"]:
         print("including gene effect")
         gene_names = Y["Target gene"]
-        enc = sklearn.preprocessing.OneHotEncoder()
-        label_encoder = sklearn.preprocessing.LabelEncoder()
+        enc = OneHotEncoder()
+        label_encoder = LabelEncoder()
         label_encoder.fit(gene_names)
         one_hot_genes = np.array(
             enc.fit_transform(label_encoder.transform(gene_names)[:, None]).todense()
@@ -94,8 +94,8 @@ def featurize_data(
 
     if learn_options["include_drug"]:
         drug_names = Y.index.get_level_values("drug").tolist()
-        enc = sklearn.preprocessing.OneHotEncoder()
-        label_encoder = sklearn.preprocessing.LabelEncoder()
+        enc = OneHotEncoder()
+        label_encoder = LabelEncoder()
         label_encoder.fit(drug_names)
         one_hot_drugs = np.array(
             enc.fit_transform(label_encoder.transform(drug_names)[:, None]).todense()
@@ -122,7 +122,7 @@ def featurize_data(
             Y["Target gene"], learn_options, data
         )
 
-    t1 = time.time()
+    t1 = time()
     if not quiet:
         print(f"\t\tElapsed time for constructing features is {t1 - t0:.2f} seconds")
 
@@ -354,7 +354,7 @@ def local_gene_seq_features(gene_names, learn_options, X):
         feature_sets,
         learn_options,
         learn_options["order"],
-        max_index_to_use=sys.maxsize,
+        max_index_to_use=maxsize,
         prefix="gene_left_win",
     )
     get_all_order_nuc_features(
@@ -362,7 +362,7 @@ def local_gene_seq_features(gene_names, learn_options, X):
         feature_sets,
         learn_options,
         learn_options["order"],
-        max_index_to_use=sys.maxsize,
+        max_index_to_use=maxsize,
         prefix="gene_right_win",
     )
     return feature_sets
@@ -415,12 +415,12 @@ def gene_guide_feature(Y, X, learn_options):
     if False:  # os.path.isfile(gene_file): #while debugging, comment out
         print(f"loading local gene seq feats from file {gene_file}")
         with open(gene_file, "rb") as f:
-            feature_sets = pickle.load(f)
+            feature_sets = load(f)
     else:
         feature_sets = local_gene_seq_features(Y["Target gene"], learn_options, X)
         print(f"writing local gene seq feats to file {gene_file}")
         with open(gene_file, "wb") as f:
-            pickle.dump(feature_sets, f)
+            dump(feature_sets, f)
 
     return feature_sets
 
@@ -527,7 +527,7 @@ def apply_nucleotide_features(
 
 
 def get_alphabet(order, raw_alphabet=("A", "T", "C", "G")):
-    alphabet = ["".join(i) for i in itertools.product(raw_alphabet, repeat=order)]
+    alphabet = ["".join(i) for i in product(raw_alphabet, repeat=order)]
     return alphabet
 
 
@@ -612,7 +612,7 @@ def nucleotide_features_dictionary(prefix=""):
 
     for order in orders:
         raw_alphabet = ["A", "T", "C", "G"]
-        alphabet = ["".join(i) for i in itertools.product(raw_alphabet, repeat=order)]
+        alphabet = ["".join(i) for i in product(raw_alphabet, repeat=order)]
         features_pos_dependent = np.zeros(len(alphabet) * (sequence - (order - 1)))
         features_pos_independent = np.zeros(np.power(len(raw_alphabet), order))
 
@@ -652,7 +652,7 @@ def normalize_feature_sets(feature_sets):
     """
 
     print("Normalizing features...")
-    t1 = time.time()
+    t1 = time()
 
     new_feature_sets = {}
     for fset in feature_sets:
@@ -660,7 +660,7 @@ def normalize_feature_sets(feature_sets):
         if np.any(np.isnan(new_feature_sets[fset].values)):
             raise Exception(f"found Nan feature values in set={fset}")
         assert new_feature_sets[fset].shape[1] > 0, "0 columns of features"
-    t2 = time.time()
+    t2 = time()
     print(f"\t\tElapsed time for normalizing features is {(t2 - t1):.2f} seconds")
 
     return new_feature_sets

@@ -10,11 +10,12 @@ http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
 http://hal.archives-ouvertes.fr/docs/00/72/67/60/PDF/07-busa-fekete.pdf
 Learning to Rank for Information Retrieval (Tie-Yan Liu)
 """
-import time
+from time import time
 
 import numpy as np
-import scipy as sp
-import scipy.stats
+from scipy.stats.mstats import rankdata
+
+from azimuth.elevation.metrics import spearman_weighted_swap_perm_test
 
 
 def mean_reciprocal_rank(rs: list) -> np.ndarray:
@@ -409,8 +410,8 @@ def get_discount_factors(num_labels, discount="log2", theta=None):
 
 def rank_data(r, rground):
     # we checked this heavily, and is correct, e.g. rground will go from largest rank to smallest
-    r = sp.stats.mstats.rankdata(r)
-    rground = sp.stats.mstats.rankdata(rground)
+    r = rankdata(r)
+    rground = rankdata(rground)
     assert np.sum(r) == np.sum(rground), "ranks should add up to the same"
     return r, rground
 
@@ -484,8 +485,8 @@ def ndcg_at_k_swap_perm_test(
     preds1 = preds1[sorted_ind]
     preds2 = preds2[sorted_ind]
 
-    ranks1 = sp.stats.mstats.rankdata(preds1)
-    ranks2 = sp.stats.mstats.rankdata(preds2)
+    ranks1 = rankdata(preds1)
+    ranks2 = rankdata(preds2)
 
     ndcg1 = ndcg_at_k_ties(
         true_labels,
@@ -503,9 +504,6 @@ def ndcg_at_k_swap_perm_test(
         normalize_from_below_too=normalize_from_below_too,
         theta=theta,
     )
-
-    real_ndcg_diff = {}
-    perm_ndcg_diff = {}
 
     real_ndcg_diff = np.abs(ndcg1 - ndcg2)
     perm_ndcg_diff = np.nan * np.zeros(nperm)
@@ -563,9 +561,6 @@ def ndcg_at_k_swap_perm_test(
 
 
 if __name__ == "__main__":
-    import pickle
-    from azimuth.elevation import metrics
-
     simulated_data = True
     permute_real_data = True
 
@@ -603,26 +598,27 @@ if __name__ == "__main__":
             truth[zero_ind] = 0
             pred1 = np.random.rand(N)
             pred2 = np.random.rand(N)
-        else:
-            fold = 0
-            truth = truth_all[fold]
-            pred1 = predictions["CFD"][fold]
-            pred2 = predictions["product"][fold]
+        # this all refers to stuff from that unavailable gs.pickle from above
+        # else:
+        #     fold = 0
+        #     truth = truth_all[fold]
+        #     pred1 = predictions["CFD"][fold]
+        #     pred2 = predictions["product"][fold]
 
-            if permute_real_data:
-                truth = np.random.permutation(truth)
+        #     if permute_real_data:
+        #         truth = np.random.permutation(truth)
 
-        t0 = time.time()
+        t0 = time()
         for i, w in enumerate(weights):
             weights_array = truth.copy()
             weights_array += w
 
-            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = metrics.spearman_weighted_swap_perm_test(
+            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = spearman_weighted_swap_perm_test(
                 pred1, pred2, truth, nperm, weights_array
             )
 
             allp[i, t] = pvaltmp
-            t1 = time.time()
+            t1 = time()
 
     truth = np.array([3, 4, 2, 1, 0, 0, 0])
     pred1 = np.array([3, 4, 2, 1, 0, 0, 0])

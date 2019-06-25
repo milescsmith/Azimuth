@@ -1,8 +1,9 @@
-import click
 import os
-import pickle
 
-from .model_comparison import run_models
+import click
+from dill import load, dump
+
+from azimuth.model_comparison import run_models
 
 
 @click.command()
@@ -46,7 +47,7 @@ def main(
     os.chdir(dname)
 
     with open(output_dir + "/learn_pickle", "rb") as f:
-        learn_options = pickle.load(f)
+        learn_options = load(f)
 
     results, all_learn_options = run_models(
         [model],
@@ -61,12 +62,12 @@ def main(
         adaboost_CV=adaboost_CV,
     )
 
-    exp_name = results.keys()[0]
+    if exp_name is None: exp_name = results.keys()[0]
 
     os.chdir(cur_dir)
 
     with open(output_dir + "/" + exp_name + ".pickle", "wb") as f:
-        pickle.dump((results, all_learn_options), f)
+        dump((results, all_learn_options), f)
 
 
 if __name__ == "__main__":

@@ -44,13 +44,13 @@ def rho_rxy_rxz(rxy, rxz, ryz):
 def dependent_corr(xy, xz, yz, n, twotailed=True, conf_level=0.95, method="steiger"):
     """
     Calculates the statistic significance between two dependent correlation coefficients
-    @param xy: correlation coefficient between x and y
-    @param xz: correlation coefficient between x and z
-    @param yz: correlation coefficient between y and z
-    @param n: number of elements in x, y and z
-    @param twotailed: whether to calculate a one or two tailed test, only works for 'steiger' method
-    @param conf_level: confidence level, only works for 'zou' method
-    @param method: defines the method uses, 'steiger' or 'zou'
+    :param xy: correlation coefficient between x and y
+    :param xz: correlation coefficient between x and z
+    :param yz: correlation coefficient between y and z
+    :param n: number of elements in x, y and z
+    :param twotailed: whether to calculate a one or two tailed test, only works for 'steiger' method
+    :param conf_level: confidence level, only works for 'zou' method
+    :param method: defines the method uses, 'steiger' or 'zou'
     @return: t and p-val
     """
     if method is not "steiger" and "zou":
