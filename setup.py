@@ -35,6 +35,6 @@ setup(
         "paramz",
         "theanets @ git+https://github.com/lmjohns3/theanets",
         "glmnet_py",
-        "dill"
+        "dill",
     ],
 )

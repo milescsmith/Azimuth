@@ -30,9 +30,7 @@ def xu_et_al_on_fold(test, X, learn_options):
 def doench_on_fold(train, test, y, y_all, X, learn_options):
     auto_class_weight = None  # 'auto'/None
     verbose = False
-    penalty = [
-        0.005 * pow(1.15, x) for x in range(0, 45)
-    ]
+    penalty = [0.005 * pow(1.15, x) for x in range(0, 45)]
     y_bin = y_all[learn_options["binary target name"]].values[:, None]
 
     label_encoder = LabelEncoder()

@@ -17,9 +17,7 @@ class SavedModelTests(unittest.TestCase):
 
     def test_predictions_nopos(self):
         df = read_csv(path.join(dirname, "1000guides.csv"), index_col=0)
-        predictions = predict(
-            array(df["guide"].values), None, None
-        )
+        predictions = predict(array(df["guide"].values), None, None)
         self.assertTrue(allclose(predictions, df["truth nopos"].values, atol=1e-1))
 
     def test_predictions_pos(self):

@@ -384,7 +384,7 @@ def feature_importances(results, fontsize=16, figsize=(14, 8)):
 
 
 if __name__ == "__main__":
-    #get_thirty_one_mer_data()
+    # get_thirty_one_mer_data()
 
     V = "1"
     if V == "1":

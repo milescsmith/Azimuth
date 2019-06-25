@@ -15,6 +15,7 @@ from azimuth.util import concatenate_feature_sets, convert_to_thirty_one
 
 DATA_PATH = resource_filename("azimuth", "saved_models/")
 
+
 def set_target(learn_options, classification):
     assert (
         "target_name" not in learn_options.keys()

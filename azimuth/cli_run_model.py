@@ -62,7 +62,8 @@ def main(
         adaboost_CV=adaboost_CV,
     )
 
-    if exp_name is None: exp_name = results.keys()[0]
+    if exp_name is None:
+        exp_name = results.keys()[0]
 
     os.chdir(cur_dir)
 

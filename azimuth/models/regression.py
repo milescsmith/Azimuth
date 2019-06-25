@@ -12,6 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from azimuth.metrics import ndcg_at_k_ties
 from azimuth import predict
 
+
 def ARDRegression_on_fold(train, test, y, X):
     """
     """

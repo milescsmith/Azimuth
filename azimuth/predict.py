@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
 from azimuth.metrics import ndcg_at_k_ties
-from azimuth.models import (DNN, GP, baselines, ensembles, regression)
+from azimuth.models import DNN, GP, baselines, ensembles, regression
 from azimuth.util import spearmanr_nonan, concatenate_feature_sets
 
 
@@ -69,7 +69,6 @@ def construct_filename(learn_options, TEST):
 
     print(f"filename = {filename}")
     return filename
-
 
 
 def extract_fpr_tpr_for_fold(aucs, y_binary, test, y_pred):
@@ -152,7 +151,9 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         "xu_et_al",
     ]
 
-    assert learn_options["method"] in allowed_methods, "invalid method: {learn_options['method']}"
+    assert (
+        learn_options["method"] in allowed_methods
+    ), "invalid method: {learn_options['method']}"
     assert (
         learn_options["method"] == "linreg"
         and learn_options["penalty"] == "L2"
@@ -252,8 +253,12 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 if learn_options["num_genes_remove_train"] == 0:
                     assert np.all(cv_i_orig[0] == cv[i][0])
                     assert np.all(cv_i_orig[1] == cv[i][1])
-                print(f"# train/train after/before is {len(cv[i][0])}, {len(cv_i_orig[0])}")
-                print(f"# test/test after/before is {len(cv[i][1])}, {len(cv_i_orig[1])}")
+                print(
+                    f"# train/train after/before is {len(cv[i][0])}, {len(cv_i_orig[0])}"
+                )
+                print(
+                    f"# test/test after/before is {len(cv[i][1])}, {len(cv_i_orig[1])}"
+                )
     else:
         raise Exception("invalid cv options given: %s" % learn_options["cv"])
 
