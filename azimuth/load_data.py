@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 
-from azimuth import util
+from . import util
 
 CUR_DIR = path.dirname(path.abspath(__file__))
 

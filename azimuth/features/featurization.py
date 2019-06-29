@@ -129,7 +129,8 @@ def featurize_data(
     check_feature_set(feature_sets)
 
     if learn_options["normalize_features"]:
-        assert "should not be here as doesn't make sense when we make one-off predictions, but could make sense for internal model comparisons when using regularized models"
+        assert f"should not be here as doesn't make sense when we make one-off predictions, " \
+            f"but could make sense for internal model comparisons when using regularized models"
         feature_sets = normalize_feature_sets(feature_sets)
         check_feature_set(feature_sets)
 
@@ -217,7 +218,8 @@ def SeqUtilFeatures(data):
     assuming '30-mer'is a key
     get melting temperature features from:
         0-the 30-mer ("global Tm")
-        1-the Tm (melting temperature) of the DNA:RNA hybrid from positions 16 - 20 of the sgRNA, i.e. the 5nts immediately proximal of the NGG PAM
+        1-the Tm (melting temperature) of the DNA:RNA hybrid from positions 16 - 20 of the sgRNA,
+        i.e. the 5nts immediately proximal of the NGG PAM
         2-the Tm of the DNA:RNA hybrid from position 8 - 15 (i.e. 8 nt)
         3-the Tm of the DNA:RNA hybrid from position 3 - 7  (i.e. 5 nt)
     """
@@ -281,11 +283,11 @@ def get_micro_homology_features(gene_names, X):
                 else:
 
                     assert (
-                        gene_seq[ind : (ind + len(guide_seq))] == guide_seq
+                        gene_seq[ind:(ind + len(guide_seq))] == guide_seq
                     ), "match not right"
-                    left_win = gene_seq[(ind - k_mer_length_left) : ind]
+                    left_win = gene_seq[(ind - k_mer_length_left):ind]
                     right_win = gene_seq[
-                        (ind + len(guide_seq)) : (
+                        (ind + len(guide_seq)):(
                             ind + len(guide_seq) + k_mer_length_right
                         )
                     ]
@@ -323,11 +325,11 @@ def local_gene_seq_features(gene_names, learn_options, X):
             if ind == -1:
                 assert ind != -1, "could not find guide in gene"
             assert (
-                gene_seq[ind : (ind + len(guide_seq))] == guide_seq
+                gene_seq[ind:(ind + len(guide_seq))] == guide_seq
             ), "match not right"
-            left_win = gene_seq[(ind - k_mer_length) : ind]
+            left_win = gene_seq[(ind - k_mer_length):ind]
             right_win = gene_seq[
-                (ind + len(guide_seq)) : (ind + len(guide_seq) + k_mer_length)
+                (ind + len(guide_seq)):(ind + len(guide_seq) + k_mer_length)
             ]
 
             if strand == "antisense":
@@ -410,7 +412,8 @@ def gene_guide_feature(Y, X, learn_options):
     # possibly incorporating the guide or interactions with it
 
     # expensive, so pickle if necessary
-    gene_file = f"..\data\gene_seq_feat_V{learn_options['V']}_km{learn_options['include_gene_guide_feature']}.ord{learn_options['order']}.pickle"
+    gene_file = f"../data/gene_seq_feat_V{learn_options['V']}_km" \
+        f"{learn_options['include_gene_guide_feature']}.ord{learn_options['order']}.pickle"
 
     if False:  # os.path.isfile(gene_file): #while debugging, comment out
         print(f"loading local gene seq feats from file {gene_file}")
@@ -434,7 +437,8 @@ def Tm_feature(data, pam_audit=True, learn_options=None):
     assuming '30-mer'is a key
     get melting temperature features from:
         0-the 30-mer ("global Tm")
-        1-the Tm (melting temperature) of the DNA:RNA hybrid from positions 16 - 20 of the sgRNA, i.e. the 5nts immediately proximal of the NGG PAM
+        1-the Tm (melting temperature) of the DNA:RNA hybrid from positions 16 - 20 of the sgRNA,
+        i.e. the 5nts immediately proximal of the NGG PAM
         2-the Tm of the DNA:RNA hybrid from position 8 - 15 (i.e. 8 nt)
         3-the Tm of the DNA:RNA hybrid from position 3 - 7  (i.e. 5 nt)
     """
@@ -453,13 +457,13 @@ def Tm_feature(data, pam_audit=True, learn_options=None):
         rna = False
         featarray[i, 0] = Tm.Tm_staluc(seq, rna=rna)  # 30mer Tm
         featarray[i, 1] = Tm.Tm_staluc(
-            seq[segments[0][0] : segments[0][1]], rna=rna
+            seq[segments[0][0]:segments[0][1]], rna=rna
         )  # 5nts immediately proximal of the NGG PAM
         featarray[i, 2] = Tm.Tm_staluc(
-            seq[segments[1][0] : segments[1][1]], rna=rna
+            seq[segments[1][0]:segments[1][1]], rna=rna
         )  # 8-mer
         featarray[i, 3] = Tm.Tm_staluc(
-            seq[segments[2][0] : segments[2][1]], rna=rna
+            seq[segments[2][0]:segments[2][1]], rna=rna
         )  # 5-mer
 
     feat = DataFrame(
@@ -550,7 +554,8 @@ def nucleotide_features(
 
     if max_index_to_use is not None:
         s = s[:max_index_to_use]
-    # s = s[:30] #cut-off at thirty to clean up extra data that they accidentally left in, and were instructed to ignore in this way
+    # s = s[:30] #cut-off at thirty to clean up extra data that they accidentally left in,
+    # nd were instructed to ignore in this way
     alphabet: List[str] = get_alphabet(order, raw_alphabet=raw_alphabet)
     features_pos_dependent = np.zeros(len(alphabet) * (len(s) - (order - 1)))
     features_pos_independent = np.zeros(np.power(len(raw_alphabet), order))
@@ -566,7 +571,7 @@ def nucleotide_features(
         index_independent.append("%s%s" % (prefix, l))
 
     for position in range(0, len(s) - order + 1, 1):
-        nucl: object = s[position : position + order]
+        nucl: object = s[position: position + order]
         features_pos_dependent[alphabet.index(nucl) + (position * len(alphabet))] = 1.0
         features_pos_independent[alphabet.index(nucl)] += 1.0
 

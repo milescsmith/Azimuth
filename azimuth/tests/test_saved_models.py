@@ -4,7 +4,7 @@ from os import path
 from numpy import array, allclose
 from pandas import read_csv
 
-from azimuth.model_comparison import predict
+from ..model_comparison import predict
 
 dirname, filename = path.split(path.abspath(__file__))
 

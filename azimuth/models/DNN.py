@@ -8,7 +8,7 @@ from scipy.stats import spearmanr
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-from azimuth import predict
+from .. import predict
 
 
 def DNN_on_fold(train, test, y_all, X, learn_options):

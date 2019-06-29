@@ -8,9 +8,9 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-from azimuth.metrics import ndcg_at_k_ties
-from azimuth.models import DNN, GP, baselines, ensembles, regression
-from azimuth.util import spearmanr_nonan, concatenate_feature_sets
+from .metrics import ndcg_at_k_ties
+from .models import DNN, GP, baselines, ensembles, regression
+from .util import spearmanr_nonan, concatenate_feature_sets
 
 
 def fill_in_truth_and_predictions(
@@ -242,7 +242,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                     np.unique(np.unique(y_all["Target gene"][train]))
                 )
                 genes_to_keep = unique_genes[
-                    0 : len(unique_genes) - learn_options["num_genes_remove_train"]
+                    0: len(unique_genes) - learn_options["num_genes_remove_train"]
                 ]
                 filtered_train = []
                 for j, gene in enumerate(y_all["Target gene"]):

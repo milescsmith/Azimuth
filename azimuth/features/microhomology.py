@@ -1,10 +1,11 @@
 # Supplementary Figure 3  |  Source code for assigning a score to a hypothetical deletion
 # pattern associated with microhomology
 # ------------------------------------------
-# comes from the Supplementary Info of the paper, in pdf form, copied here, but refactored to make a function
-#    rather than to write it to file
+# comes from the Supplementary Info of the paper, in pdf form, copied here, but refactored
+# to make a function rather than to write it to file
 # also see their web server version: http://www.rgenome.net/mich-calculator/ where they say:
-# Insert one or more query sequences (A, G, T, C only) flanking the same length at a cleavage site (100bp or less, 60~80bp recommended).
+# Insert one or more query sequences (A, G, T, C only) flanking the same length at a cleavage
+# site (100bp or less, 60~80bp recommended).
 
 from math import exp
 from re import findall
@@ -24,10 +25,10 @@ def compute_score(
     for k in range(2, left)[::-1]:
         for j in range(left, left + right - k + 1):
             for i in range(0, left - k + 1):
-                if seq[i : i + k] == seq[j : j + k]:
+                if seq[i:i + k] == seq[j:j + k]:
                     length = j - i
                     file_temp.write(
-                        seq[i : i + k]
+                        seq[i:i + k]
                         + "\t"
                         + str(i)
                         + "\t"
@@ -42,7 +43,7 @@ def compute_score(
                     )
     file_temp.close()
 
-    ### After searching out all microhomology patterns, duplication should be removed!!
+    # After searching out all microhomology patterns, duplication should be removed!!
     with open(tmpfile1, "r") as f1, open(tmpfile2, "w") as f2:
         s1 = f1.read()
 

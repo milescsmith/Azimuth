@@ -1,7 +1,7 @@
 import numpy as np
 from GPy.models import WarpedGP, GPRegression
 from GPy.kern import Linear, RBF, Bias
-from azimuth.models.gpy_ssk import WeightedDegree
+from .gpy_ssk import WeightedDegree
 
 
 def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):

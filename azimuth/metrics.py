@@ -15,10 +15,10 @@ from time import time
 import numpy as np
 from scipy.stats.mstats import rankdata
 
-from azimuth.elevation.metrics import spearman_weighted_swap_perm_test
+from .elevation.metrics import spearman_weighted_swap_perm_test
 
 
-def mean_reciprocal_rank(rs: list) -> np.ndarray:
+def mean_reciprocal_rank(relevance_scores: list) -> np.ndarray:
     """Score is reciprocal of the rank of the first relevant item
 
     First element is 'rank 1'.  Relevance is binary (nonzero is relevant).
@@ -35,17 +35,17 @@ def mean_reciprocal_rank(rs: list) -> np.ndarray:
     0.75
 
     Args:
-        rs: Iterator of relevance scores (list or numpy) in rank order
+        relevance_scores: Iterator of relevance scores (list or numpy) in rank order
             (first element is the first item)
 
     Returns:
         Mean reciprocal rank
     """
-    rs = (np.asarray(r).nonzero()[0] for r in rs)
-    return np.mean([1.0 / (r[0] + 1) if r.size else 0.0 for r in rs])
+    relevance_scores = (np.asarray(r).nonzero()[0] for r in relevance_scores)
+    return np.mean([1.0 / (r[0] + 1) if r.size else 0.0 for r in relevance_scores])
 
 
-def r_precision(r: list) -> np.ndarray:
+def r_precision(relevance: list) -> np.ndarray:
     """Score is precision after all relevant documents have been retrieved
 
     Relevance is binary (nonzero is relevant).
@@ -67,11 +67,11 @@ def r_precision(r: list) -> np.ndarray:
     Returns:
         R Precision
     """
-    r = np.asarray(r) != 0
-    z = r.nonzero()[0]
+    relevance = np.asarray(relevance) != 0
+    z = relevance.nonzero()[0]
     if not z.size:
         return 0.0
-    return np.mean(r[: z[-1] + 1])
+    return np.mean(relevance[: z[-1] + 1])
 
 
 def precision_at_k(r, k):
@@ -291,7 +291,8 @@ def ndcg_at_k_ties(
     dcg = dcg_at_k_ties(labels, predictions, k, method=method, theta=theta)
 
     dcg_max = dcg_at_k_ties(labels, labels, k, method, theta=theta)
-    # NOTE: I have checked that dcg_at_k_ties and dcg_at_k match when there are no ties, or ties in the labels
+    # NOTE: I have checked that dcg_at_k_ties and dcg_at_k match when there are no ties,
+    # or ties in the labels
 
     if normalize_from_below_too:
         dcg_min = dcg_at_k_ties(
@@ -310,7 +311,8 @@ def ndcg_at_k_ties(
 
 
 def dcg_helper(discount_factors, gain, k, labels, method, predictions):
-    # step through, in current order (of decreasing predictions), accumulating tied gains (which may be singletons)
+    # step through, in current order (of decreasing predictions), accumulating tied gains
+    # (which may be singletons)
     ii = 0
     dcg = 0.0
     while ii < k:
@@ -336,7 +338,8 @@ def dcg_helper(discount_factors, gain, k, labels, method, predictions):
 
 def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     """
-    See 2008 McSherry et al on how to efficiently compute NDCG (method=0 here) with ties (in the predictions)
+    See 2008 McSherry et al on how to efficiently compute NDCG (method=0 here) with ties
+    (in the predictions)
     'labels' are what the "ground truth" judges assign
     'predictions' are the algorithm predictions corresponding to each label
     Also, http://en.wikipedia.org/wiki/Discounted_cumulative_gain for basic defns
@@ -416,7 +419,6 @@ def rank_data(r, rground):
     return r, rground
 
 
-# todo: look at rank_data for bug, look at highest alpha predictions for ties
 def dcg_alt(relevances, rank=20):
     relevances = np.asarray(relevances)[:rank]
     n_relevances = len(relevances)
@@ -453,10 +455,12 @@ def ndcg_at_k_swap_perm_test(
     #
     # see ndcg_at_k_ties for all but the first four parameters
     #
-    # balance_zeros = True means that when we swap a zero for a non-zero value, we will also do a reverse swap
+    # balance_zeros = True means that when we swap a zero for a non-zero value, we will also do
+    # a reverse swap
     #
     # this is a two-sided test, but since it is a symmetric null distribution, one should
-    # be able to divide the p-value by 2 to get the one-sided version (but think this through before using)
+    # be able to divide the p-value by 2 to get the one-sided version (but think this through
+    # before using)
 
     if isinstance(preds1, list):
         preds1 = np.array(preds1)
@@ -508,8 +512,8 @@ def ndcg_at_k_swap_perm_test(
     real_ndcg_diff = np.abs(ndcg1 - ndcg2)
     perm_ndcg_diff = np.nan * np.zeros(nperm)
 
-    if False:  # np.all(preds1 == preds2):
-        pval[theta] = 1.0
+    if np.all(preds1 == preds2):
+        pval = 1.0
     else:
         zero_ind = true_labels == 0
         assert np.sum(zero_ind) < len(
@@ -546,16 +550,8 @@ def ndcg_at_k_swap_perm_test(
                 tmp_diff = np.abs(ndcg1_perm[theta] - ndcg2_perm[theta])
                 perm_ndcg_diff[theta][t] = tmp_diff
 
-        pval = {}
-
         num_stat_greater = np.max((((perm_ndcg_diff > real_ndcg_diff).sum() + 1), 1.0))
         pval = num_stat_greater / nperm
-
-    # if False:
-    #     plt.figure()
-    #     plt.plot(np.sort(perm_ndcg_diff), '.')
-    #     plt.plot(real_ndcg_diff * np.ones(perm_ndcg_diff.shape), 'k-')
-    #     plt.show()
 
     return pval, real_ndcg_diff, perm_ndcg_diff, ndcg1, ndcg2
 
@@ -613,9 +609,8 @@ if __name__ == "__main__":
             weights_array = truth.copy()
             weights_array += w
 
-            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = spearman_weighted_swap_perm_test(
-                pred1, pred2, truth, nperm, weights_array
-            )
+            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = \
+                spearman_weighted_swap_perm_test(pred1, pred2, truth, nperm, weights_array)
 
             allp[i, t] = pvaltmp
             t1 = time()

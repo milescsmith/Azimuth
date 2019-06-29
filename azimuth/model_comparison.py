@@ -7,11 +7,11 @@ import pandas as pd
 from dill import load, dump
 from pkg_resources import resource_filename
 
-from azimuth.features.featurization import featurize_data
-from azimuth.load_data import get_V3_genes, from_file
-from azimuth.local_multiprocessing import configure
-from azimuth.predict import cross_validate
-from azimuth.util import concatenate_feature_sets, convert_to_thirty_one
+from .features.featurization import featurize_data
+from .load_data import get_V3_genes, from_file
+from .local_multiprocessing import configure
+from .predict import cross_validate
+from .util import concatenate_feature_sets, convert_to_thirty_one
 
 DATA_PATH = resource_filename("azimuth", "saved_models/")
 
@@ -486,12 +486,15 @@ def run_models(
                                     )
                         model_string = (
                             feat_models_short[model]
-                            + f"_or{learn_options_set[learn_options_str]['order']}_md{max_depth}_lr{learning_rate:.2f}_n{num_estimators}_{learn_options_str}"
+                            + f"_or{learn_options_set[learn_options_str]['order']}_"
+                            f"md{max_depth}_lr{learning_rate:.2f}_"
+                            f"n{num_estimators}_{learn_options_str}"
                         )
                     if model != "AdaBoost":
                         model_string = (
                             feat_models_short[model]
-                            + f"_ord{learn_options_set[learn_options_str]['order']}_{learn_options_str}"
+                            + f"_ord{learn_options_set[learn_options_str]['order']}_"
+                            f"{learn_options_str}"
                         )
 
                     results[model_string] = cross_validate(
@@ -655,7 +658,8 @@ def predict(
     assert len(seq[0]) > 0, "Make sure that seq is not empty"
     assert isinstance(
         seq[0], str
-    ), "Please ensure input sequences are in string format, i.e. 'AGAG' rather than ['A' 'G' 'A' 'G'] or alternate representations"
+    ), f"Please ensure input sequences are in string format, i.e. " \
+        f"'AGAG' rather than ['A' 'G' 'A' 'G'] or alternate representations"
 
     if aa_cut is not None:
         assert len(aa_cut) > 0, "Make sure that aa_cut is not empty"
@@ -726,10 +730,11 @@ def predict(
     # call to scikit-learn, returns a vector of predicted values
     preds = model.predict(inputs)
 
-    # also check that predictions are not 0/1 from a classifier.predict() (instead of predict_proba() or decision_function())
+    # also check that predictions are not 0/1 from a classifier.predict()
+    # (instead of predict_proba() or decision_function())
     unique_preds = np.unique(preds)
     ok = False
-    for pr in preds:
+    for pr in unique_preds:
         if pr not in [0, 1]:
             ok = True
     assert ok, "model returned only 0s and 1s"

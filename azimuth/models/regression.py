@@ -9,8 +9,8 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-from azimuth.metrics import ndcg_at_k_ties
-from azimuth import predict
+from ..metrics import ndcg_at_k_ties
+from .. import predict
 
 
 def ARDRegression_on_fold(train, test, y, X):
@@ -287,7 +287,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
     #     raise Exception("Uh... something went wrong with figuring out 'best_alpha' at line 227 in regression.py.  Fix it.")
 
     if learn_options["penalty"] == "EN":
-        print("\t\tbest l1_ratio is {best_l1r} from range={l1_ratio[[0, -1]]}")
+        print(f"\t\tbest l1_ratio is {best_l1r} from range={l1_ratio[[0, -1]]}")
     max_perf = np.nanmax(performance)
 
     if max_perf < 0.0:
@@ -313,7 +313,7 @@ def feature_select(clf, learn_options, test_inner, train_inner, X, y):
         not learn_options["weighted"] is not None
     ), "cannot currently do feature selection with weighted regression"
     assert (
-        learn_options["loss"] is not "huber"
+        learn_options["loss"] != "huber"
     ), "won't use huber loss function with feature selection"
     non_zero_coeff = clf.coef_ != 0.0
     if non_zero_coeff.sum() > 0:

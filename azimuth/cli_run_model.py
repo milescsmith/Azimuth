@@ -3,7 +3,7 @@ import os
 import click
 from dill import load, dump
 
-from azimuth.model_comparison import run_models
+from .model_comparison import run_models
 
 
 @click.command()
@@ -34,7 +34,7 @@ def main(
     output_dir,
     exp_name,
 ):
-    """command-line version of model_comparison.py 
+    """command-line version of model_comparison.py
     \f
     (see that file for more options?)
     """

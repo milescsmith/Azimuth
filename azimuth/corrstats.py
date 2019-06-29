@@ -1,20 +1,24 @@
 """
-Functions for calculating the statistical significant differences between two dependent or independent correlation
-coefficients.
-The Fisher and Steiger method is adopted from the R package http://personality-project.org/r/html/paired.r.html
+Functions for calculating the statistical significant differences
+between two dependent or independent correlation coefficients.
+The Fisher and Steiger method is adopted from the R package
+http://personality-project.org/r/html/paired.r.html
 and is described in detail in the book 'Statistical Methods for Psychology'
-The Zou method is adopted from http://seriousstats.wordpress.com/2012/02/05/comparing-correlations/
+The Zou method is adopted from
+http://seriousstats.wordpress.com/2012/02/05/comparing-correlations/
 Credit goes to the authors of above mentioned packages!
 Author: Philipp Singer (www.philippsinger.info)
 
 ------------------------------------------------------------
 README.md:
 CorrelationStats
-This Python script enables you to compute statistical significance tests on both dependent and independent 
-correlation coefficients. For each case two methods to choose from are available.
+This Python script enables you to compute statistical significance tests on
+both dependent and independent correlation coefficients. For each case two methods to
+choose from are available.
 
 For details, please refer to: http://www.philippsinger.info/?p=347
-#copied from on 4/24/2015 from https://github.com/psinger/CorrelationStats/blob/master/corrstats.py
+#copied from on 4/24/2015 from
+https://github.com/psinger/CorrelationStats/blob/master/corrstats.py
 """
 
 __author__ = "psinger"
@@ -53,7 +57,7 @@ def dependent_corr(xy, xz, yz, n, twotailed=True, conf_level=0.95, method="steig
     :param method: defines the method uses, 'steiger' or 'zou'
     @return: t and p-val
     """
-    if method is not "steiger" and "zou":
+    if method != "steiger" and "zou":
         raise Exception("Wrong method!")
 
     if method == "steiger":

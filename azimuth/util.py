@@ -4,7 +4,9 @@ import pandas as pd
 from scipy.stats import spearmanr
 from scipy.stats.mstats import rankdata
 
-from azimuth.load_data import combine_organisms
+from .load_data import combine_organisms
+from sklearn.linear_model.coordinate_descent import ElasticNet
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 def get_thirty_one_mer_data():
@@ -43,8 +45,8 @@ def convert_to_thirty_one(guide_seq, gene, strand):
             f"returning sequence+'A', could not find guide {guide_seq} in gene {gene}"
         )
         return gene_seq + "A"
-    assert gene_seq[ind : (ind + len(guide_seq))] == guide_seq, "match not right"
-    new_mer = gene_seq[(ind - 1) : (ind + len(guide_seq))]
+    assert gene_seq[ind: (ind + len(guide_seq))] == guide_seq, "match not right"
+    new_mer = gene_seq[(ind - 1): (ind + len(guide_seq))]
     # this actually tacks on an extra one at the end for some reason
     if strand == "sense":
         new_mer = new_mer.reverse_complement()
@@ -120,8 +122,8 @@ def get_gene_sequence(gene_name):
         with open(gene_file, "rb") as f:
             seq = f.read()
             seq = seq.replace("\r\n", "")
-    except:
-        raise Exception(
+    except ValueError:
+        print(
             f"could not find gene sequence file {gene_file}, please see examples and generate one for your gene "
             f"as needed, with this filename"
         )
@@ -238,7 +240,7 @@ def get_data(data, y_names, organism="human", target_gene=None):
     # strip out featurization to later
     features = pd.DataFrame(data["30mer"])
 
-    if organism is "human":
+    if organism == "human":
         target_gene = y_names[0].split(" ")[1]
 
     outputs["Target gene"] = target_gene
@@ -253,9 +255,9 @@ def get_data(data, y_names, organism="human", target_gene=None):
 
 def extract_feature_from_model(method, results, split):
     model_type = results[method][3][split]
-    if isinstance(model_type, sklearn.linear_model.coordinate_descent.ElasticNet):
+    if isinstance(model_type, ElasticNet):
         tmp_imp = results[method][3][split].coef_[:, None]
-    elif isinstance(model_type, sklearn.ensemble.GradientBoostingRegressor):
+    elif isinstance(model_type, GradientBoostingRegressor):
         tmp_imp = results[method][3][split].feature_importances_[:, None]
     else:
         raise Exception("need to add model %s to feature extraction" % model_type)
@@ -264,16 +266,16 @@ def extract_feature_from_model(method, results, split):
 
 def extract_feature_from_model_sum(method, results, split, indexes):
     model_type = results[method][3][split]
-    if isinstance(model_type, sklearn.linear_model.coordinate_descent.ElasticNet):
+    if isinstance(model_type, ElasticNet):
         tmp_imp = np.sum(results[method][3][split].coef_[indexes])
-    elif isinstance(model_type, sklearn.ensemble.GradientBoostingRegressor):
+    elif isinstance(model_type, GradientBoostingRegressor):
         tmp_imp = np.sum(results[method][3][split].feature_importances_[indexes])
     else:
         raise Exception("need to add model %s to feature extraction" % model_type)
     return tmp_imp
 
 
-def feature_importances(results, fontsize=16, figsize=(14, 8)):
+def feature_importances(results):
     for method in list(results.keys()):
         feature_names = results[method][6]
 

@@ -21,7 +21,7 @@ def xu_et_al_on_fold(test, X, learn_options):
     coef = coef.values.flatten()[:, None]
     X = X.copy()
     X = np.append(X, np.zeros((X.shape[0], 3 * 4)), axis=1)
-    X = X[:, 3 * 4 :]
+    X = X[:, 3 * 4:]
     y_pred = 1.0 / (1 + np.exp(-np.dot(X[test], coef)))
 
     return y_pred, coef
