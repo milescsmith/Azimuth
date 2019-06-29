@@ -15,7 +15,7 @@ from time import time
 import numpy as np
 from scipy.stats.mstats import rankdata
 
-from .elevation.metrics import spearman_weighted_swap_perm_test
+from azimuth.elevation.metrics import spearman_weighted_swap_perm_test
 
 
 def mean_reciprocal_rank(relevance_scores: list) -> np.ndarray:
