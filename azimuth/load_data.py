@@ -49,7 +49,7 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
         if learn_options["weighted"] is not None :
             raise AssertionError("not supported for V1 data")
-        annotations, gene_position, target_genes, x_df, y_df = read_V1_data(
+        _, gene_position, target_genes, x_df, y_df = read_V1_data(
             data_file, learn_options
         )
 
@@ -58,14 +58,14 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
         learn_options["raw target name"] = "average activity"
 
     elif learn_options["V"] == 2:  # from Nov 2014, hot off the machines
-        x_df, drugs_to_genes, target_genes, y_df, gene_position = read_V2_data(
+        x_df, _, target_genes, y_df, gene_position = read_V2_data(
             data_file, learn_options
         )
 
         # check that data is consistent with sgRNA score
         xx = x_df["sgRNA Score"].values
         yy = y_df["score_drug_gene_rank"].values
-        rr, pp = pearsonr(xx, yy)
+        rr, _ = pearsonr(xx, yy)
         if rr <= 0 :
             raise AssertionError(
                 "data processing has gone wrong as correlation with previous "
@@ -85,7 +85,8 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
         )
 
     elif learn_options["V"] == 4:  # merge of V1 and V2 and the Xu et al data
-        # these are relative to the V2 data, and V1 and Xu et al. will be made to automatically match
+        # these are relative to the V2 data, and V1 and Xu et al. will be made
+        # to automatically match
         learn_options["binary target name"] = "score_drug_gene_threshold"
         learn_options["rank-transformed target name"] = "score_drug_gene_rank"
         learn_options["raw target name"] = None
@@ -194,7 +195,8 @@ def read_V1_data(
             "*****************MATCHING DOENCH CODE (DEBUG MODE)**********************\n"
             "************************************************************************"
         )
-        # normally it is:y_df['average threshold'] =y_df['average rank'] > 0.8, where 1s are good guides, 0s are not
+        # normally it is:y_df['average threshold'] =y_df['average rank'] > 0.8, where
+        # 1s are good guides, 0s are not
         y_df["average threshold"] = y_df["average rank"] < 0.2  # 1s are bad guides
         print("press c to continue")
         import pdb
@@ -253,14 +255,14 @@ def read_V2_data(
     count = 0
     for drug in drugs_to_genes :
         genes = drugs_to_genes[drug]
-        for g in genes:
-            xtmp = data.copy().xs(g, level="Target gene", drop_level=False)
+        for gene in genes :
+            xtmp = data.copy().xs(gene, level="Target gene", drop_level=False)
             xtmp["drug"] = drug
             xtmp["score"] = xtmp[
                 drug
             ].copy()  # grab the drug results that are relevant for this gene
 
-            if g in known_pairs[drug]:
+            if gene in known_pairs[drug] :
                 xtmp["test"] = 1.0
             else:
                 xtmp["test"] = 0.0
@@ -269,7 +271,8 @@ def read_V2_data(
             x_df = pd.concat([x_df, xtmp], axis=0)
             if verbose:
                 print(
-                    f"Loaded {xtmp.shape[0]} samples for gene {g} \ttotal number of samples: {count}"
+                    f"Loaded {xtmp.shape[0]} samples for gene {gene} "
+                    f"\ttotal number of samples: {count}"
                 )
 
     # create new index that includes the drug
@@ -301,7 +304,7 @@ def read_V2_data(
                     "score"
                 ]
             )
-            y_ranktmp, y_rank_raw, y_thresholdtmp, y_quanttmp = util.get_ranks(
+            y_ranktmp, _, y_thresholdtmp, y_quanttmp = util.get_ranks(
                 ytmp, thresh=0.8, prefix="score_drug_gene", flip=False
             )
             # np.unique(y_rank.values-y_rank_raw.values)
@@ -318,7 +321,7 @@ def read_V2_data(
     y_quant = pd.DataFrame()
     for drug in drugs_to_genes :
         ytmp = pd.DataFrame(y_df.xs(drug, level="drug", drop_level=False)["score"])
-        y_ranktmp, y_rank_raw, y_thresholdtmp, y_quanttmp = util.get_ranks(
+        y_ranktmp, _, y_thresholdtmp, y_quanttmp = util.get_ranks(
             ytmp, thresh=0.8, prefix="score_drug", flip=False
         )
         # np.unique(y_rank.values-y_rank_raw.values)
@@ -387,16 +390,16 @@ def merge_all(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
 def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
     """
-    ground_truth_label, etc. are taken to correspond to the V2 data, and then the V1 is appropriately matched
-    based on semantics
+    ground_truth_label, etc. are taken to correspond to the V2 data,
+    and then the V1 is appropriately matched based on semantics
     """
     if learn_options["include_strand"] :
         raise AssertionError("don't currently have 'Strand' column in V1 data")
 
-    annotations, gene_position1, target_genes1, x_df1, y_df1 = read_V1_data(
+    _, gene_position1, target_genes1, x_df1, y_df1 = read_V1_data(
         data_file, learn_options
     )
-    x_df2, drugs_to_genes, target_genes2, y_df2, gene_position2 = read_V2_data(
+    x_df2, _, target_genes2, y_df2, gene_position2 = read_V2_data(
         data_file2
     )
 
@@ -466,7 +469,8 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
         y_df.index = pd.MultiIndex.from_tuples(newindex, names=y_df.index.names)
         x_df.index = pd.MultiIndex.from_tuples(newindex, names=y_df.index.names)
 
-        # there seems to be a duplicate index, and thus this increases the data set size, so doing it the hacky way...
+        # there seems to be a duplicate index, and thus this increases the data set size,
+        # so doing it the hacky way...
         x_and_y = pd.merge(x_df, y_df, how="inner", left_index=True, right_index=True)
         gene_position_tmp = gene_position.copy()
         gene_position_tmp.index.names = ["Sequence", "Target", "drug"]
@@ -485,14 +489,14 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
 
 def get_V1_genes(data_file=None, learn_options: dict = None) -> np.ndarray:
-    annotations, gene_position, target_genes, x_df, y_df = read_V1_data(
+    _, _, target_genes, _, _ = read_V1_data(
         data_file, learn_options
     )
     return target_genes
 
 
 def get_V2_genes(data_file: str = None) -> np.ndarray:
-    x_df, drugs_to_genes, target_genes, y_df, gene_position = read_V2_data(
+    _, _, target_genes, _, _ = read_V2_data(
         data_file, verbose=False
     )
     return target_genes
@@ -506,18 +510,18 @@ def get_V3_genes(data_fileV1: str = None, data_fileV2: str = None) -> np.ndarray
 
 
 def get_mouse_genes(data_file: str = None) -> np.ndarray:
-    annotations, gene_position, target_genes, x_df, y_df = read_V1_data(
+    _, _, _, x_df, _ = read_V1_data(
         data_file, learn_options=None
     )
     return x_df[x_df["Organism"] == "mouse"]["Target gene"].unique()
 
 
 def get_human_genes(data_file: str = None) -> np.ndarray:
-    annotations, gene_position, target_genes, x_df, y_df = read_V1_data(
+    _, _, _, x_df, _ = read_V1_data(
         data_file, learn_options=None
     )
     mouse_genes = x_df[x_df["Organism"] == "mouse"]["Target gene"].unique()
     all_genes = get_V3_genes(
         None, None
-    )  # TODO this needs to support specifying file names (!= 'None')
+    )
     return np.setdiff1d(all_genes, mouse_genes)

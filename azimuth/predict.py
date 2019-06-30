@@ -185,7 +185,8 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     if learn_options["cv"] == "stratified":
         if "extra_pairs" in learn_options or learn_options["extra pairs"] :
             raise AssertionError(
-                "can't use extra pairs with stratified CV need to figure out how to properly account for genes affected by two drugs"
+                "can't use extra pairs with stratified CV need to figure out how to properly "
+                "account for genes affected by two drugs"
             )
         label_encoder = LabelEncoder()
         label_encoder.fit(y_all["Target gene"].values)
@@ -213,8 +214,8 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 "dummy", y_all
             )  # get train, test split using a dummy gene
             # train_tmp, test_tmp = train_test_tmp
-            # not a typo, using training set to test on as well, just for this case. Test set is not used
-            # for internal cross-val, etc. anyway.
+            # not a typo, using training set to test on as well, just for this case.
+            # Test set is not used for internal cross-val, etc. anyway.
             # train_test_tmp = (train_tmp, train_tmp)
             cv.append(train_test_tmp)
             fold_labels = ["dummy_for_no_cv"]  # learn_options['all_genes']
@@ -477,7 +478,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             elif learn_options["training_metric"] == "NDCG":
                 extract_NDCG_for_fold(
                     metrics=metrics,
-                    y_ground_truth=[learn_options["ground_truth_label"]].values,
+                    y_ground_truth=y_all[learn_options["ground_truth_label"]].values,
                     test=test,
                     y_pred=y_pred,
                     learn_options=learn_options,

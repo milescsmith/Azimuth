@@ -32,7 +32,8 @@ def get_thirty_one_mer_data():
 
 def convert_to_thirty_one(guide_seq, gene, strand):
     """
-    Given a guide sequence, a gene name, and strand (e.g. "sense"), return a 31mer string which is our 30mer,
+    Given a guide sequence, a gene name, and strand (e.g. "sense"),
+    return a 31mer string which is our 30mer,
     plus one more at the end.
     """
     guide_seq = Seq.Seq(guide_seq)
@@ -124,14 +125,15 @@ def get_gene_sequence(gene_name):
             seq = seq.replace("\r\n", "")
     except ValueError:
         print(
-            f"could not find gene sequence file {gene_file}, please see examples and generate one for your gene "
+            f"could not find gene sequence file {gene_file}, "
+            f"please see examples and generate one for your gene "
             f"as needed, with this filename"
         )
 
     return seq
 
 
-def get_ranks(y, thresh=0.8, prefix="", flip=False, col_name="score"):
+def get_ranks(y, thresh=0.8, prefix="", flip=False) :
     """
     y should be a DataFrame with one column
     thresh is the threshold at which to call it a knock-down or not
@@ -165,7 +167,7 @@ def get_ranks(y, thresh=0.8, prefix="", flip=False, col_name="score"):
         y_rank_raw = 1.0 - y_rank_raw
     y_rank_raw.columns = [prefix + "rank raw"]
     if np.any(np.isnan(y_rank)) :
-        raise AssertionError("found NaN ranks")
+        raise AssertionError("found NaN in ranks")
 
     y_quantized = y_threshold.copy()
     y_quantized.columns = [prefix + "quantized"]
@@ -186,8 +188,8 @@ def get_data(data, y_names, organism="human", target_gene=None):
     for y_name in y_names:  # for each cell type
         y = pd.DataFrame(data[y_name])
         # these thresholds/quantils are not used:
-        y_rank, y_rank_raw, y_threshold, y_quantiles = get_ranks(
-            y, thresh=thresh, flip=False, col_name=y_name
+        y_rank, y_rank_raw, y_threshold, _ = get_ranks(
+            y, thresh=thresh, flip=False,
         )
         y_rank.columns = [y_name + " rank"]
         y_rank_raw.columns = [y_name + " rank raw"]
@@ -200,7 +202,7 @@ def get_data(data, y_names, organism="human", target_gene=None):
     average_activity.columns = ["average activity"]
 
     average_rank_from_avg_activity = get_ranks(
-        average_activity, thresh=thresh, flip=False, col_name="average activity"
+        average_activity, thresh=thresh, flip=False
     )[0]
     average_rank_from_avg_activity.columns = ["average_rank_from_avg_activity"]
     average_threshold_from_avg_activity = (average_rank_from_avg_activity > thresh) * 1
@@ -287,7 +289,7 @@ def feature_importances(results):
                 uniq.append(ft)
             else:
                 seen.add(ft)
-        if len(seen) > 0:
+        if seen :
             raise Exception(f"feature name appears more than once: {seen}")
 
         pd_order1, pi_order1, pd_order2, pi_order2, nggx = [], [], [], [], []
@@ -295,7 +297,7 @@ def feature_importances(results):
             if "False" in s:
                 continue
             elif "_" in s:
-                nucl, pos = s.split("_")
+                nucl, _ = s.split("_")
                 if len(nucl) == 1:
                     pd_order1.append(i)
                 elif len(nucl) == 2:
@@ -317,8 +319,7 @@ def feature_importances(results):
             "NGGX_pd.Order2": nggx,
         }
 
-        grouped_feat_ind = []
-        [grouped_feat_ind.extend(grouped_feat[a]) for a in grouped_feat]
+        grouped_feat_ind = [grouped_feat[a] for a in grouped_feat]
         remaining_features_ind = set.difference(
             set(range(len(feature_names))), set(grouped_feat_ind)
         )
@@ -328,7 +329,7 @@ def feature_importances(results):
 
         feature_importances_grouped = {}
         for k in grouped_feat:
-            if len(grouped_feat[k]) == 0:
+            if not grouped_feat[k] :
                 continue
             else:
                 for split in results[method][3] :
@@ -391,15 +392,14 @@ if __name__ == "__main__":
 
     V = "1"
     if V == "1":
-        human_data = pd.read_excel("data/V1_data.xlsx", sheetname=0, index_col=[0, 1])
-        mouse_data = pd.read_excel("data/V1_data.xlsx", sheetname=1, index_col=[0, 1])
-        X, Y = combine_organisms()
+        HUMAN_DATA = pd.read_excel("data/V1_data.xlsx", sheetname=0, index_col=[0, 1])
+        MOUSE_DATA = pd.read_excel("data/V1_data.xlsx", sheetname=1, index_col=[0, 1])
+        X, Y = combine_organisms(HUMAN_DATA, MOUSE_DATA)
         X.to_pickle("../data/X.pd")  # sequence features (i.e. inputs to prediction)
         Y.to_pickle(
             "../data/Y.pd"
         )  # cell-averaged ranks, plus more (i.e. possible targets for prediction)
-        print()
-        "done writing to file"
+        print("done writing to file")
     elif V == "2":
         # this is now all in predict.py
         pass

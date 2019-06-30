@@ -334,7 +334,7 @@ def local_gene_seq_features(gene_names, learn_options, X):
             if ind == -1:
                 if ind == -1 :
                     raise AssertionError("could not find guide in gene")
-            if gene_seq[ind : (ind + len(guide_seq))] != guide_seq :
+            if gene_seq[ind :(ind + len(guide_seq))] != guide_seq :
                 raise AssertionError("match not right")
             left_win = gene_seq[(ind - k_mer_length) : ind]
             right_win = gene_seq[

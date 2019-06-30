@@ -112,7 +112,7 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         m = GPRegression(X[train], y[train], kernel=kern)
 
     m.optimize_restarts(3)
-    y_pred, y_uncert = m.predict(X[test])
+    y_pred, _ = m.predict(X[test])
 
     # TODO add offset such that low scores are around 0 (not -4 or so)
 

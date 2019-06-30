@@ -303,7 +303,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
 
     clf = train_linreg_model(best_alpha, l1r, learn_options, train, X, y, y_all)
     if learn_options["feature_select"]:
-        raise Exception("untested in a long time, should double check")
+        # raise Exception("untested in a long time, should double check")
         clf, y_pred = feature_select(clf, learn_options, test, train, X, y)
     else:
         y_pred = clf.predict(X[test])

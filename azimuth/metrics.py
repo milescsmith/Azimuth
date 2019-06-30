@@ -303,7 +303,7 @@ def ndcg_at_k_ties(
         raise AssertionError()
     numerator = np.max((0, numerator))
     ndcg = numerator / (dcg_max - dcg_min)
-    if not (1.0 >= ndcg >= 0.0) :
+    if not 1.0 >= ndcg >= 0.0 :
         raise AssertionError(f"ndcg={ndcg} should be in [0,1]")
     if not dcg_max:
         ndcg = 0.0
@@ -450,7 +450,6 @@ def ndcg_at_k_swap_perm_test(
     k,
     normalize_from_below_too,
     theta=None,
-    balance_zeros=True,
 ):
     # pVal is the probability that we would observe as big an AUC diff as we
     # did if the ROC curves were drawn from the null hypothesis (which is that
@@ -525,7 +524,7 @@ def ndcg_at_k_swap_perm_test(
         if np.sum(zero_ind) >= len(zero_ind) :
             raise AssertionError("balancing assumes there are more zeros than ones")
 
-        for t in range(nperm):
+        for _ in range(nperm) :
             pair_ind_to_swap = np.random.rand(N) < 0.5
 
             ranks1_perm = ranks1.copy()
@@ -551,9 +550,9 @@ def ndcg_at_k_swap_perm_test(
                 theta=theta,
             )
 
-            for theta in theta:
-                tmp_diff = np.abs(ndcg1_perm[theta] - ndcg2_perm[theta])
-                perm_ndcg_diff[theta][t] = tmp_diff
+            for thing in theta :
+                tmp_diff = np.abs(ndcg1_perm[thing] - ndcg2_perm[thing])
+                perm_ndcg_diff[thing][_] = tmp_diff
 
         num_stat_greater = np.max((((perm_ndcg_diff > real_ndcg_diff).sum() + 1), 1.0))
         pval = num_stat_greater / nperm

@@ -56,7 +56,7 @@ def GP_setup(learn_options, likelihood="gaussian", degree=3, set_target_fn=set_t
     return learn_options
 
 
-def SVC_setup(learn_options, likelihood="gaussian", degree=3, set_target_fn=set_target):
+def SVC_setup(learn_options, set_target_fn=set_target) :
     learn_options["method"] = "SVC"
     learn_options = set_target_fn(learn_options, classification=True)
 
@@ -378,7 +378,6 @@ def run_models(
     set_target_fn=set_target,
     pam_audit=True,
     length_audit=True,
-    return_data=False,
 ):
     """
     CV is set to false if want to train a final model and not cross-validate, but it goes in to what
@@ -427,7 +426,7 @@ def run_models(
                 for order in orders:
                     print(f"running {model}, order {order} for {learn_options_str}")
 
-                    Y, feature_sets, target_genes, learn_options, num_proc = setup_function(
+                    Y, feature_sets, _, learn_options, _ = setup_function(
                         test=test,
                         order=order,
                         learn_options=partial_learn_opt,
@@ -515,7 +514,7 @@ def run_models(
                 if setup_function != setup :
                     raise AssertionError("not yet modified to handle this")
                 print(f"running {model} for {learn_options_str}")
-                Y, feature_sets, target_genes, learn_options, num_proc = setup(
+                Y, feature_sets, target_genes, learn_options, _ = setup(
                     test=test,
                     order=1,
                     learn_options=partial_learn_opt,
@@ -611,7 +610,7 @@ def save_final_model_V3(
             learn_options["include_gene_position"] = True
 
     learn_options_set = {short_name: learn_options}
-    results, all_learn_options = run_models(
+    results, _ = run_models(
         ["AdaBoost"],
         orders=[2],
         adaboost_learning_rates=[0.1],
@@ -733,7 +732,7 @@ def predict(
         pam_audit=pam_audit,
         length_audit=length_audit,
     )
-    inputs, dim, dimsum, feature_names = concatenate_feature_sets(feature_sets)
+    inputs, *_ = concatenate_feature_sets(feature_sets)
 
     # call to scikit-learn, returns a vector of predicted values
     preds = model.predict(inputs)
