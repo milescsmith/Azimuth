@@ -17,8 +17,13 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["azimuth", "azimuth.features", "azimuth.models", "azimuth.tests",
-              "azimuth.elevation"],
+    packages=[
+        "azimuth",
+        "azimuth.features",
+        "azimuth.models",
+        "azimuth.tests",
+        "azimuth.elevation",
+    ],
     keywords="CRISPR",
     project_urls={"Forked_from": "https://github.com/MicrosoftResearch/Azimuth"},
     python_requires=">=3.6",
@@ -37,6 +42,6 @@ setup(
         "theanets @ git+https://github.com/lmjohns3/theanets",
         "glmnet_py",
         "dill",
-        "matplotlib >= 3.0"
+        "matplotlib >= 3.0",
     ],
 )

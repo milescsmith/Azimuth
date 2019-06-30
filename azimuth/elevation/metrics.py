@@ -9,7 +9,8 @@ def pearson_weighted(x, y, w=None):
     if w is None:
         w = np.ones_like(y)
 
-    assert x.shape == y.shape and y.shape == w.shape, "must have same shape"
+    if not x.shape == y.shape and y.shape == w.shape :
+        raise AssertionError("must have same shape")
 
     m_x_w = np.sum(x * w) / np.sum(w)
     m_y_w = np.sum(y * w) / np.sum(w)
@@ -47,10 +48,10 @@ def spearman_weighted_swap_perm_test(preds1, preds2, true_labels, nperm, weights
     else:
         true_labels = true_labels.flatten()
 
-    assert len(preds1) == len(preds2), "need same number of preditions from each model"
-    assert len(preds1) == len(
-        true_labels
-    ), "need same number of preditions in truth and predictions"
+    if len(preds1) != len(preds2) :
+        raise AssertionError("need same number of preditions from each model")
+    if len(preds1) != len(true_labels) :
+        raise AssertionError("need same number of preditions in truth and predictions")
     N = len(preds1)
 
     # re-sort all by truth ordering so that when swap they are aligned
@@ -99,10 +100,14 @@ if __name__ == "__main__":
         x = np.random.randn(100)
         y = np.random.randn(100)
 
-        assert np.allclose(pearson_weighted(x, y), st.pearsonr(x, y)[0])
-        assert np.allclose(spearman_weighted(x, y), st.spearmanr(x, y)[0])
+        if not np.allclose(pearson_weighted(x, y), st.pearsonr(x, y)[0]) :
+            raise AssertionError()
+        if not np.allclose(spearman_weighted(x, y), st.spearmanr(x, y)[0]) :
+            raise AssertionError()
 
         x = y.copy()
         x += np.random.randn(*x.shape) * 0.05
-        assert np.allclose(spearman_weighted(x, y), st.spearmanr(x, y)[0])
-        assert np.allclose(pearson_weighted(x, y), st.pearsonr(x, y)[0])
+        if not np.allclose(spearman_weighted(x, y), st.spearmanr(x, y)[0]) :
+            raise AssertionError()
+        if not np.allclose(pearson_weighted(x, y), st.pearsonr(x, y)[0]) :
+            raise AssertionError()

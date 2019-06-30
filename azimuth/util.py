@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 from scipy.stats.mstats import rankdata
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model.coordinate_descent import ElasticNet
 
 from .load_data import combine_organisms
-from sklearn.linear_model.coordinate_descent import ElasticNet
-from sklearn.ensemble import GradientBoostingRegressor
 
 
 def get_thirty_one_mer_data():
@@ -45,8 +45,9 @@ def convert_to_thirty_one(guide_seq, gene, strand):
             f"returning sequence+'A', could not find guide {guide_seq} in gene {gene}"
         )
         return gene_seq + "A"
-    assert gene_seq[ind: (ind + len(guide_seq))] == guide_seq, "match not right"
-    new_mer = gene_seq[(ind - 1): (ind + len(guide_seq))]
+    if gene_seq[ind : (ind + len(guide_seq))] != guide_seq :
+        raise AssertionError("match not right")
+    new_mer = gene_seq[(ind - 1) : (ind + len(guide_seq))]
     # this actually tacks on an extra one at the end for some reason
     if strand == "sense":
         new_mer = new_mer.reverse_complement()
@@ -60,16 +61,18 @@ def concatenate_feature_sets(feature_sets, keys=None):
     of each set
     Returns: inputs, dim
     """
-    assert feature_sets != {}, "no feature sets present"
+    if feature_sets == {} :
+        raise AssertionError("no feature sets present")
     if keys is None:
         keys = list(feature_sets.keys())
 
     F = feature_sets[keys[0]].shape[0]
-    for assemblage in list(feature_sets.keys()):
+    for assemblage in feature_sets :
         F2 = feature_sets[assemblage].shape[0]
-        assert (
-            F == F2
-        ), f"not same # individuals for features {keys[0]} and {assemblage}"
+        if F != F2 :
+            raise AssertionError(
+                f"not same # individuals for features {keys[0]} and {assemblage}"
+            )
 
     N = feature_sets[keys[0]].shape[0]
     inputs = np.zeros((N, 0))
@@ -83,7 +86,6 @@ def concatenate_feature_sets(feature_sets, keys=None):
         inputs = np.hstack((inputs, inputs_set))
         feature_names.extend(feature_sets[assemblage].columns.tolist())
 
-    # print "final size of inputs matrix is (%d, %d)" % inputs.shape
     return inputs, dim, dimsum, feature_names
 
 
@@ -116,9 +118,7 @@ def impute_gene_position(gene_position):
 
 def get_gene_sequence(gene_name):
     try:
-        gene_file = "../../gene_sequences/%s_sequence.txt" % gene_name
-        # gene_file = '../gene_sequences/%s_sequence.txt' % gene_name
-        # gene_file = 'gene_sequences/%s_sequence.txt' % gene_name
+        gene_file = f"../../gene_sequences/{gene_name}_sequence.txt"
         with open(gene_file, "rb") as f:
             seq = f.read()
             seq = seq.replace("\r\n", "")
@@ -164,7 +164,8 @@ def get_ranks(y, thresh=0.8, prefix="", flip=False, col_name="score"):
     if flip:
         y_rank_raw = 1.0 - y_rank_raw
     y_rank_raw.columns = [prefix + "rank raw"]
-    assert ~np.any(np.isnan(y_rank)), "found NaN ranks"
+    if np.any(np.isnan(y_rank)) :
+        raise AssertionError("found NaN ranks")
 
     y_quantized = y_threshold.copy()
     y_quantized.columns = [prefix + "quantized"]
@@ -260,7 +261,7 @@ def extract_feature_from_model(method, results, split):
     elif isinstance(model_type, GradientBoostingRegressor):
         tmp_imp = results[method][3][split].feature_importances_[:, None]
     else:
-        raise Exception("need to add model %s to feature extraction" % model_type)
+        raise Exception(f"need to add model {model_type} to feature extraction")
     return tmp_imp
 
 
@@ -271,12 +272,12 @@ def extract_feature_from_model_sum(method, results, split, indexes):
     elif isinstance(model_type, GradientBoostingRegressor):
         tmp_imp = np.sum(results[method][3][split].feature_importances_[indexes])
     else:
-        raise Exception("need to add model %s to feature extraction" % model_type)
+        raise Exception(f"need to add model {model_type} to feature extraction")
     return tmp_imp
 
 
 def feature_importances(results):
-    for method in list(results.keys()):
+    for method in results :
         feature_names = results[method][6]
 
         seen = set()
@@ -317,7 +318,7 @@ def feature_importances(results):
         }
 
         grouped_feat_ind = []
-        [grouped_feat_ind.extend(grouped_feat[a]) for a in list(grouped_feat.keys())]
+        [grouped_feat_ind.extend(grouped_feat[a]) for a in grouped_feat]
         remaining_features_ind = set.difference(
             set(range(len(feature_names))), set(grouped_feat_ind)
         )
@@ -330,7 +331,7 @@ def feature_importances(results):
             if len(grouped_feat[k]) == 0:
                 continue
             else:
-                for split in list(results[method][3].keys()):
+                for split in results[method][3] :
                     split_feat_importance = extract_feature_from_model_sum(
                         method, results, split, grouped_feat[k]
                     )
@@ -340,7 +341,7 @@ def feature_importances(results):
                         feature_importances_grouped[k].append(split_feat_importance)
 
         all_split_importances = None
-        for split in list(results[method][3].keys()):
+        for split in results[method][3] :
 
             split_feat_importance = extract_feature_from_model(method, results, split)
 
@@ -379,7 +380,7 @@ def feature_importances(results):
 
         for i in range(df.shape[0]):
             thisfeat = df["Feature name"].iloc[i]
-            if thisfeat in feature_dictionary.keys():
+            if thisfeat in feature_dictionary :
                 df["Feature name"].iloc[i] = feature_dictionary[thisfeat]
 
         return df

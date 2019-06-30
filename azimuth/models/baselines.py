@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import auc, roc_curve
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
-from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import auc, roc_curve
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import LinearSVC
 
 
 def mean_on_fold(train, test, y):
@@ -21,7 +21,7 @@ def xu_et_al_on_fold(test, X, learn_options):
     coef = coef.values.flatten()[:, None]
     X = X.copy()
     X = np.append(X, np.zeros((X.shape[0], 3 * 4)), axis=1)
-    X = X[:, 3 * 4:]
+    X = X[:, 3 * 4 :]
     y_pred = 1.0 / (1 + np.exp(-np.dot(X[test], coef)))
 
     return y_pred, coef
@@ -67,8 +67,10 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
             )[:, 1]
 
             fpr, tpr, _ = roc_curve(y_bin[train][test_inner], y_test)
-            assert np.nan not in fpr, "found nan fpr"
-            assert np.nan not in tpr, "found nan tpr"
+            if np.nan in fpr :
+                raise AssertionError("found nan fpr")
+            if np.nan in tpr :
+                raise AssertionError("found nan tpr")
             roc_auc = auc(fpr, tpr)
             if verbose:
                 print(j, i, roc_auc)
@@ -90,8 +92,10 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
 
 
 def sgrna_from_doench_on_fold(feature_sets, test, X):
-    assert len(feature_sets.keys()) == 1, "should only use sgRNA Score here"
-    assert feature_sets.keys()[0] == "sgRNA Score"
+    if len(feature_sets) != 1 :
+        raise AssertionError("should only use sgRNA Score here")
+    if list(feature_sets.keys())[0] != "sgRNA Score" :
+        raise AssertionError()
     y_pred = X[test][:, 0]
     return y_pred, None
 

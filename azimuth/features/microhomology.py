@@ -25,10 +25,10 @@ def compute_score(
     for k in range(2, left)[::-1]:
         for j in range(left, left + right - k + 1):
             for i in range(0, left - k + 1):
-                if seq[i:i + k] == seq[j:j + k]:
+                if seq[i : i + k] == seq[j : j + k] :
                     length = j - i
                     file_temp.write(
-                        seq[i:i + k]
+                        seq[i : i + k]
                         + "\t"
                         + str(i)
                         + "\t"

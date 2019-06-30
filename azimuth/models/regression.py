@@ -9,8 +9,8 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-from ..metrics import ndcg_at_k_ties
 from .. import predict
+from ..metrics import ndcg_at_k_ties
 
 
 def ARDRegression_on_fold(train, test, y, X):
@@ -77,17 +77,20 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     (L1/L2 penalized) logistic reggresion using scikitlearn
     """
 
-    assert len(np.unique(y)) <= 2, "if using logreg need binary targets"
-    assert learn_options["weighted"] is None, "cannot do weighted Log reg"
-    assert (
-        learn_options["feature_select"] is False
-    ), "cannot do feature selection yet in logistic regression--see linreg_on_fold to implement"
+    if len(np.unique(y)) > 2 :
+        raise AssertionError("if using logreg need binary targets")
+    if learn_options["weighted"] is not None :
+        raise AssertionError("cannot do weighted Log reg")
+    if learn_options["feature_select"] is True :
+        raise AssertionError(
+            "cannot do feature selection yet in logistic regression--see "
+            "linreg_on_fold to implement"
+        )
 
     cv, n_folds = set_up_inner_folds(learn_options, y_all.iloc[train])
 
-    assert (
-        learn_options["penalty"] == "L1" or learn_options["penalty"] == "L2"
-    ), "can only use L1 or L2 with logistic regression"
+    if learn_options["penalty"] != "L1" and learn_options["penalty"] != "L2" :
+        raise AssertionError("can only use L1 or L2 with logistic regression")
 
     tol = 0.00001
 
@@ -115,8 +118,11 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
                     y_all[learn_options["ground_truth_label"]][train][test_inner],
                     tmp_pred,
                 )
-                assert ~np.any(np.isnan(fpr)), "found nan fpr"
-                assert ~np.any(np.isnan(tpr)), "found nan tpr"
+                if np.any(np.isnan(fpr)) :
+                    raise AssertionError("found nan fpr")
+                if np.any(np.isnan(tpr)) :
+                    raise AssertionError("found nan tpr")
+
                 tmp_auc = auc(fpr, tpr)
                 performance[i] += tmp_auc
             else:
@@ -125,9 +131,8 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     performance /= n_folds
 
     max_score_ind = np.where(performance == np.nanmax(performance))
-    assert max_score_ind != len(
-        performance
-    ), "enlarge alpha range as hitting max boundary"
+    if max_score_ind == len(performance) :
+        raise AssertionError("enlarge alpha range as hitting max boundary")
 
     # in the unlikely event of tied scores, take the first one.
     if len(max_score_ind[0]) > 1:
@@ -221,8 +226,10 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
                         y_all[learn_options["ground_truth_label"]][train][test_inner],
                         tmp_pred,
                     )
-                    assert ~np.any(np.isnan(fpr)), "found nan fpr"
-                    assert ~np.any(np.isnan(tpr)), "found nan tpr"
+                    if np.any(np.isnan(fpr)) :
+                        raise AssertionError("found nan fpr")
+                    if np.any(np.isnan(tpr)) :
+                        raise AssertionError("found nan tpr")
                     tmp_auc = auc(fpr, tpr)
                     performance[i, j] += tmp_auc
 
@@ -244,9 +251,10 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
                     )
 
                 elif learn_options["training_metric"] == "NDCG":
-                    assert (
-                        "thresh" not in learn_options["ground_truth_label"]
-                    ), "for NDCG must not use thresholded ranks, but pure ranks"
+                    if "thresh" in learn_options["ground_truth_label"] :
+                        raise AssertionError(
+                            "for NDCG must not use thresholded ranks, but pure " "ranks"
+                        )
 
                     tmp_truth = (
                         y_all[learn_options["ground_truth_label"]]
@@ -265,10 +273,8 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
     performance /= n_folds
 
     max_score_ind = np.where(performance == np.nanmax(performance))
-    assert max_score_ind != len(
-        performance
-    ), "enlarge alpha range as hitting max boundary"
-    # assert degenerate_pred[max_score_ind[0][0]]==0, "found degenerate predictions at max score"
+    if max_score_ind == len(performance) :
+        raise AssertionError("enlarge alpha range as hitting max boundary")
 
     # in the unlikely event of tied scores, take the first one.
     # we take the first one regardless because a change in NumPy made it an
@@ -309,12 +315,12 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
 
 
 def feature_select(clf, learn_options, test_inner, train_inner, X, y):
-    assert (
-        not learn_options["weighted"] is not None
-    ), "cannot currently do feature selection with weighted regression"
-    assert (
-        learn_options["loss"] != "huber"
-    ), "won't use huber loss function with feature selection"
+    if learn_options["weighted"] is not None :
+        raise AssertionError(
+            "cannot currently do feature selection with weighted regression"
+        )
+    if learn_options["loss"] == "huber" :
+        raise AssertionError("won't use huber loss function with feature selection")
     non_zero_coeff = clf.coef_ != 0.0
     if non_zero_coeff.sum() > 0:
         clf = linear_model.LinearRegression()
@@ -358,7 +364,7 @@ def get_weights(learn_options, fold, y, y_all):
         N = len(y[fold])
         weights = np.random.rand(N)
     elif learn_options["weighted"] is not None:
-        raise Exception("invalid weighted type, %s" % learn_options["weighted"])
+        raise Exception(f"invalid weighted type, {learn_options['weighted']}")
     # plt.plot(weights, y[train_inner],'.')
     return weights
 
@@ -377,7 +383,7 @@ def set_up_inner_folds(learn_options: dict, y):
         or learn_options["cv"] == "stratified"
         or n_genes == 1
     ):
-        if "n_folds" not in learn_options.keys():
+        if "n_folds" not in learn_options :
             n_splits = len(np.unique(gene_classes))
         else:
             n_splits = learn_options["n_folds"]

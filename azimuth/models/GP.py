@@ -1,6 +1,7 @@
 import numpy as np
-from GPy.models import WarpedGP, GPRegression
 from GPy.kern import Linear, RBF, Bias
+from GPy.models import WarpedGP, GPRegression
+
 from .gpy_ssk import WeightedDegree
 
 
@@ -19,7 +20,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         kern += RBF(1, active_dims=[current_dim], name="GC_rbf")
         X = np.concatenate((X, feature_sets["gc_count"].values), axis=1)
         current_dim += 1
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number of columns")
 
     if "drug" in feature_sets:
         Q = feature_sets["drug"].values.shape[1]
@@ -28,7 +30,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["drug"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "gene effect" in feature_sets:
         Q = feature_sets["gene effect"].values.shape[1]
@@ -37,7 +40,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["gene effect"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "Percent Peptide" in feature_sets:
         Q = feature_sets["Percent Peptide"].values.shape[1]
@@ -46,7 +50,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["Percent Peptide"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "Nucleotide cut position" in feature_sets:
         Q = feature_sets["Nucleotide cut position"].values.shape[1]
@@ -55,7 +60,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["Nucleotide cut position"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "Strand effect" in feature_sets:
         Q = feature_sets["Strand effect"].values.shape[1]
@@ -64,14 +70,16 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["Strand effect"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "NGGX" in feature_sets:
         Q = feature_sets["NGGX"].values.shape[1]
         kern += Linear(Q, active_dims=range(current_dim, current_dim + Q), name="NGGX")
         X = np.concatenate((X, feature_sets["NGGX"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "TM" in feature_sets:
         Q = feature_sets["TM"].values.shape[1]
@@ -80,7 +88,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["TM"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     if "gene features" in feature_sets:
         Q = feature_sets["gene features"].values.shape[1]
@@ -92,7 +101,8 @@ def gp_on_fold(feature_sets, train, test, y, y_all, learn_options):
         )
         X = np.concatenate((X, feature_sets["gene features"].values), axis=1)
         current_dim += Q
-        assert X.shape[1] == current_dim
+        if X.shape[1] != current_dim :
+            raise AssertionError("incorrect number or columns")
 
     kern += Bias(X.shape[1])
 

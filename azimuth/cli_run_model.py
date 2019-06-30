@@ -63,7 +63,7 @@ def main(
     )
 
     if exp_name is None:
-        exp_name = results.keys()[0]
+        exp_name = list(results.keys())[0]
 
     os.chdir(cur_dir)
 

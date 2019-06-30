@@ -103,7 +103,8 @@ def precision_at_k(r, k):
         ValueError: len(r) must be >= k
         :param k:
     """
-    assert k >= 1
+    if k < 1 :
+        raise AssertionError()
     r = np.asarray(r)[:k] != 0
     if r.size != k:
         raise ValueError("Relevance score length < k")
@@ -269,19 +270,16 @@ def ndcg_at_k_ties(
     if isinstance(predictions, list):
         predictions = np.array(predictions)
 
-    assert (
-        len(labels.shape) == 1 or np.min(labels.shape) == 1
-    ), "should be 1D array or equivalent"
-    assert (
-        len(predictions.shape) == 1 or np.min(predictions.shape) == 1
-    ), "should be 1D array or equivalent"
+    if len(labels.shape) != 1 and np.min(labels.shape) != 1 :
+        raise AssertionError("should be 1D array or equivalent")
+    if len(predictions.shape) != 1 and np.min(predictions.shape) != 1 :
+        raise AssertionError("should be 1D array or equivalent")
 
     labels = labels.flatten()
     predictions = predictions.flatten()
 
-    assert np.all(
-        labels.shape == predictions.shape
-    ), "labels and predictions should have the same shape"
+    if np.any(labels.shape != predictions.shape) :
+        raise AssertionError("labels and predictions should have the same shape")
 
     if k is None:
         k = len(labels)
@@ -301,10 +299,12 @@ def ndcg_at_k_ties(
     else:
         dcg_min = 0
     numerator = dcg - dcg_min
-    assert numerator > -1e-5
+    if numerator <= -1e-5 :
+        raise AssertionError()
     numerator = np.max((0, numerator))
     ndcg = numerator / (dcg_max - dcg_min)
-    assert 1.0 >= ndcg >= 0.0, f"ndcg={ndcg} should be in [0,1]"
+    if not (1.0 >= ndcg >= 0.0) :
+        raise AssertionError(f"ndcg={ndcg} should be in [0,1]")
     if not dcg_max:
         ndcg = 0.0
     return ndcg
@@ -332,7 +332,8 @@ def dcg_helper(discount_factors, gain, k, labels, method, predictions):
             ii += 1
         avg_gain = cum_tied_gain / num_ties
         dcg += avg_gain * cum_tied_disc
-        assert not np.isnan(dcg), "found nan dcg"
+        if np.isnan(dcg) :
+            raise AssertionError("found nan dcg")
     return dcg
 
 
@@ -344,11 +345,12 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     'predictions' are the algorithm predictions corresponding to each label
     Also, http://en.wikipedia.org/wiki/Discounted_cumulative_gain for basic defns
     """
-    assert isinstance(predictions, np.ndarray)
-    assert len(labels) == len(
-        predictions
-    ), "labels and predictions should be of same length"
-    assert k <= len(labels), "k should be <= len(labels)"
+    if not isinstance(predictions, np.ndarray) :
+        raise AssertionError()
+    if len(labels) != len(predictions) :
+        raise AssertionError("labels and predictions should be of same length")
+    if k > len(labels) :
+        raise AssertionError("k should be <= len(labels)")
 
     # order both labels and preds so that they are in order of decreasing predictive score
     sorted_ind = np.argsort(predictions)[::-1]
@@ -374,7 +376,8 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     elif method == 3:
         discount_factors = get_discount_factors(len(labels), discount="combination")
     elif method == 4:
-        assert theta is not None, "need to specify theta or theta"
+        if theta is None :
+            raise AssertionError("need to specify theta or theta")
         discount_factors = get_discount_factors(
             len(labels), discount="1/rtheta", theta=theta
         )
@@ -382,10 +385,12 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     else:
         raise NotImplementedError()
 
-    assert len(discount_factors) == len(labels), "discount factors has wrong length"
+    if len(discount_factors) != len(labels) :
+        raise AssertionError("discount factors has wrong length")
 
     dcg = dcg_helper(discount_factors, gain, k, labels, method, predictions)
-    assert not np.isnan(dcg), "found nan dcg"
+    if np.isnan(dcg) :
+        raise AssertionError("found nan dcg")
 
     return dcg
 
@@ -415,7 +420,8 @@ def rank_data(r, rground):
     # we checked this heavily, and is correct, e.g. rground will go from largest rank to smallest
     r = rankdata(r)
     rground = rankdata(rground)
-    assert np.sum(r) == np.sum(rground), "ranks should add up to the same"
+    if np.sum(r) != np.sum(rground) :
+        raise AssertionError("ranks should add up to the same")
     return r, rground
 
 
@@ -477,10 +483,10 @@ def ndcg_at_k_swap_perm_test(
     else:
         true_labels = true_labels.flatten()
 
-    assert len(preds1) == len(preds2), "need same number of preditions from each model"
-    assert len(preds1) == len(
-        true_labels
-    ), "need same number of preditions in truth and predictions"
+    if len(preds1) != len(preds2) :
+        raise AssertionError("need same number of preditions from each model")
+    if len(preds1) != len(true_labels) :
+        raise AssertionError("need same number of preditions in truth and predictions")
     N = len(preds1)
 
     # re-sort all by truth ordering so that when swap they are aligned
@@ -516,9 +522,8 @@ def ndcg_at_k_swap_perm_test(
         pval = 1.0
     else:
         zero_ind = true_labels == 0
-        assert np.sum(zero_ind) < len(
-            zero_ind
-        ), "balancing assumes there are more zeros than ones"
+        if np.sum(zero_ind) >= len(zero_ind) :
+            raise AssertionError("balancing assumes there are more zeros than ones")
 
         for t in range(nperm):
             pair_ind_to_swap = np.random.rand(N) < 0.5
@@ -609,8 +614,9 @@ if __name__ == "__main__":
             weights_array = truth.copy()
             weights_array += w
 
-            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = \
-                spearman_weighted_swap_perm_test(pred1, pred2, truth, nperm, weights_array)
+            pvaltmp, real_corr_diff, perm_corr_diff, corr1, corr2 = spearman_weighted_swap_perm_test(
+                pred1, pred2, truth, nperm, weights_array
+            )
 
             allp[i, t] = pvaltmp
             t1 = time()

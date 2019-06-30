@@ -21,16 +21,18 @@ def from_custom_file(data_file: str) -> tuple:
         "Amino Acid Cut position",
     ]
     for col in mandatory_columns:
-        assert (
-            col in data.columns
-        ), f"inputs for prediction must include these columns: {mandatory_columns}"
+        if col not in data.columns :
+            raise AssertionError(
+                f"inputs for prediction must include these columns: "
+                f"{mandatory_columns}"
+            )
 
     x_df = pd.DataFrame(data)
     x_df["30mercopy"] = x_df["30mer"]
     x_df = x_df.set_index(["30mer", "Target gene"])
     x_df["30mer"] = x_df["30mercopy"]
     x_df.index.names = ["Sequence", "Target"]
-    x_df["drug"] = ["dummydrug%s" % i for i in range(x_df.shape[0])]
+    x_df["drug"] = [f"dummydrug{i}" for i in range(x_df.shape[0])]
     x_df = x_df.set_index("drug", append=True)
 
     y_df = None
@@ -45,7 +47,8 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
         print(f"loading V{learn_options['V']} data")
 
-        assert not learn_options["weighted"] is not None, "not supported for V1 data"
+        if learn_options["weighted"] is not None :
+            raise AssertionError("not supported for V1 data")
         annotations, gene_position, target_genes, x_df, y_df = read_V1_data(
             data_file, learn_options
         )
@@ -63,9 +66,11 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
         xx = x_df["sgRNA Score"].values
         yy = y_df["score_drug_gene_rank"].values
         rr, pp = pearsonr(xx, yy)
-        assert (
-            rr > 0
-        ), "data processing has gone wrong as correlation with previous predictions is negative"
+        if rr <= 0 :
+            raise AssertionError(
+                "data processing has gone wrong as correlation with previous "
+                "predictions is negative"
+            )
 
     elif (
         learn_options["V"] == 3
@@ -102,9 +107,9 @@ def from_file(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
 
 def set_V2_target_names(learn_options: dict) -> dict:
-    if "binary target name" not in learn_options.keys():
+    if "binary target name" not in learn_options :
         learn_options["binary target name"] = "score_drug_gene_threshold"
-    if "rank-transformed target name" not in learn_options.keys():
+    if "rank-transformed target name" not in learn_options :
         learn_options["rank-transformed target name"] = "score_drug_gene_rank"
     learn_options["raw target name"] = "score"
     return learn_options
@@ -177,10 +182,11 @@ def read_V1_data(
 
     y_df.index.names = ["Sequence", "Target gene"]
 
-    assert x_df.index.equals(y_df.index), (
-        "The index of x_df is different from the index of y_df "
-        "(this can cause inconsistencies/random performance later on)"
-    )
+    if not x_df.index.equals(y_df.index) :
+        raise AssertionError(
+            "The index of x_df is different from the index of y_df "
+            "(this can cause inconsistencies/random performance later on)"
+        )
 
     if learn_options is not None and learn_options["flipV1target"]:
         print(
@@ -229,9 +235,11 @@ def read_V2_data(
     }
 
     if learn_options is not None:
-        assert not (
-            learn_options["extra pairs"] and learn_options["all pairs"]
-        ), "extra pairs and all pairs options (in learn_options) can't be active simultaneously."
+        if learn_options["extra pairs"] or learn_options["all pairs"] :
+            raise AssertionError(
+                "extra pairs and all pairs options (in learn_options) can't be "
+                "active simultaneously."
+            )
 
         if learn_options["extra pairs"]:
             drugs_to_genes["AZD_200nM"].extend(["CUL3", "NF1", "NF2"])
@@ -243,7 +251,7 @@ def read_V2_data(
             )
 
     count = 0
-    for drug in drugs_to_genes.keys():
+    for drug in drugs_to_genes :
         genes = drugs_to_genes[drug]
         for g in genes:
             xtmp = data.copy().xs(g, level="Target gene", drop_level=False)
@@ -285,7 +293,7 @@ def read_V2_data(
     y_rank = pd.DataFrame()
     y_threshold = pd.DataFrame()
     y_quant = pd.DataFrame()
-    for drug in drugs_to_genes.keys():
+    for drug in drugs_to_genes :
         gene_list = drugs_to_genes[drug]
         for gene in gene_list:
             ytmp = pd.DataFrame(
@@ -308,7 +316,7 @@ def read_V2_data(
     y_rank = pd.DataFrame()
     y_threshold = pd.DataFrame()
     y_quant = pd.DataFrame()
-    for drug in drugs_to_genes.keys():
+    for drug in drugs_to_genes :
         ytmp = pd.DataFrame(y_df.xs(drug, level="drug", drop_level=False)["score"])
         y_ranktmp, y_rank_raw, y_thresholdtmp, y_quanttmp = util.get_ranks(
             ytmp, thresh=0.8, prefix="score_drug", flip=False
@@ -341,7 +349,7 @@ def read_V2_data(
         }
 
         variance = None
-        for drug in drugs_to_genes.keys():
+        for drug in drugs_to_genes :
             data_tmp = data.iloc[
                 data.index.get_level_values("Target gene").isin(drugs_to_genes[drug])
             ][experiments[drug]]
@@ -361,10 +369,11 @@ def read_V2_data(
         print("done.")
 
     # Make sure to keep this check last in this function
-    assert x_df.index.equals(y_df.index), (
-        "The index of x_df is different from the index of y_df "
-        "(this can cause inconsistencies/random performance later on)"
-    )
+    if not x_df.index.equals(y_df.index) :
+        raise AssertionError(
+            "The index of x_df is different from the index of y_df "
+            "(this can cause inconsistencies/random performance later on)"
+        )
 
     return x_df, drugs_to_genes, target_genes, y_df, gene_position
 
@@ -381,9 +390,8 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
     ground_truth_label, etc. are taken to correspond to the V2 data, and then the V1 is appropriately matched
     based on semantics
     """
-    assert not learn_options[
-        "include_strand"
-    ], "don't currently have 'Strand' column in V1 data"
+    if learn_options["include_strand"] :
+        raise AssertionError("don't currently have 'Strand' column in V1 data")
 
     annotations, gene_position1, target_genes1, x_df1, y_df1 = read_V1_data(
         data_file, learn_options
@@ -437,7 +445,8 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
     if save_to_file:
         y_df.index.names = ["Sequence", "Target", "drug"]
-        assert np.all(x_df.index.values == y_df.index.values), "rows don't match up"
+        if np.any(x_df.index.values != y_df.index.values) :
+            raise AssertionError("rows don't match up")
 
         onedupind = np.where(y_df.index.duplicated())[0][0]
         alldupind = np.where(
@@ -446,7 +455,8 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
         # arbitrarily set one of these to have "nodrug2" as the third level index
         # so that they are not repeated, and the joints therefore do not augment the data set
-        assert len(alldupind) == 2, "expected only duplicates"
+        if len(alldupind) != 2 :
+            raise AssertionError("expected only duplicates")
         newindex = y_df.index.tolist()
         newindex[onedupind] = (
             newindex[onedupind][0],
