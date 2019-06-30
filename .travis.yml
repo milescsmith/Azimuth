@@ -13,6 +13,8 @@ before_install:
   - conda info -a
 
 install:
+  - conda config --add channels conda-forge
+  - conda config --set channel_priority strict
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy nose sphinx pip nose cython pandas matplotlib mkl scikit-learn=0.20.0 biopython
   - pip install . 
 
