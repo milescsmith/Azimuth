@@ -1,6 +1,7 @@
 from copy import deepcopy
 from math import log10
 from os import path
+from typing import Optional, List, Union, Callable
 
 import numpy as np
 import pandas as pd
@@ -366,23 +367,32 @@ def setup(
 def run_models(
     models,
     orders,
-    GP_likelihoods=["gaussian", "warped"],
-    WD_kernel_degrees=[3],
-    adaboost_learning_rates=[0.1],
-    adaboost_num_estimators=[100],
-    adaboost_max_depths=[3],
-    learn_options_set=None,
-    test=False,
-    adaboost_CV=True,
-    setup_function=setup,
-    set_target_fn=set_target,
-    pam_audit=True,
-    length_audit=True,
+        GP_likelihoods: List[str] = ["gaussian", "warped"],
+        WD_kernel_degrees: Union[List[int], int] = 3,
+        adaboost_learning_rates: Union[List[float], float] = 0.1,
+        adaboost_num_estimators: Union[List[float], float] = 100,
+        adaboost_max_depths: Union[List[int], int] = 3,
+        learn_options_set: Optional[dict] = None,
+        test: bool = False,
+        adaboost_CV: bool = True,
+        setup_function: Callable = setup,
+        set_target_fn: Callable = set_target,
+        pam_audit: bool = True,
+        length_audit: bool = True,
 ):
     """
     CV is set to false if want to train a final model and not cross-validate, but it goes in to what
     looks like cv code
     """
+
+    if isinstance(WD_kernel_degrees, int) :
+        WD_kernel_degrees = list(WD_kernel_degrees)
+    if isinstance(adaboost_learning_rates, float) :
+        adaboost_learning_rates = list(adaboost_learning_rates)
+    if isinstance(adaboost_num_estimators, float) :
+        adaboost_num_estimators = list(adaboost_num_estimators)
+    if isinstance(adaboost_max_depths, int) :
+        adaboost_max_depths = list(adaboost_max_depths)
 
     results = {}
     if learn_options_set is None :
@@ -514,7 +524,7 @@ def run_models(
                 if setup_function != setup :
                     raise AssertionError("not yet modified to handle this")
                 print(f"running {model} for {learn_options_str}")
-                Y, feature_sets, target_genes, learn_options, _ = setup(
+                Y, feature_sets, _, learn_options, _ = setup(
                     test=test,
                     order=1,
                     learn_options=partial_learn_opt,

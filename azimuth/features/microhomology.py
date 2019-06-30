@@ -55,7 +55,7 @@ def compute_score(
             sum_score_3 = 0
             sum_score_not_3 = 0
 
-            for i in range(len(list_f1)):
+            for i in enumerate(list_f1) :
                 n = 0
                 score_3 = 0
                 score_not_3 = 0

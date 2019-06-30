@@ -168,7 +168,7 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     return y_pred, clf
 
 
-def linreg_on_fold(train, test, y, y_all, X, learn_options, fold_number):
+def linreg_on_fold(train, test, y, y_all, X, learn_options) :
     """
     linreg using scikitlearn, using more standard regression models with penalization requiring
     nested-cross-validation

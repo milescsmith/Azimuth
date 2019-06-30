@@ -176,13 +176,12 @@ def get_ranks(y, thresh=0.8, prefix="", flip=False) :
 
 
 def get_data(data, y_names, organism="human", target_gene=None):
-    outputs = pd.DataFrame()
     """
     this is called once for each gene (aggregating across cell types)
     y_names are cell types
     e.g. call: X_CD13, Y_CD13 = get_data(cd13, y_names=['NB4 CD13', 'TF1 CD13'])
     """
-
+    outputs = pd.DataFrame()
     # generate ranks for each cell type before aggregating to match what is in Doench et al
     thresh = 0.8
     for y_name in y_names:  # for each cell type

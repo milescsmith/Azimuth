@@ -110,7 +110,8 @@ def featurize_data(
         feature_sets["Strand effect"] = (DataFrame(data["Strand"]) == "sense") * 1
 
     if learn_options["include_gene_feature"]:
-        feature_sets["gene features"] = gene_feature(Y, data, learn_options)
+        feature_sets["gene features"] = gene_feature(Y)
+        # feature_sets["gene features"] = gene_feature(Y, data, learn_options)
 
     if learn_options["include_gene_guide_feature"] > 0:
         tmp_feature_sets = gene_guide_feature(Y, data, learn_options)

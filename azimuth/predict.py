@@ -171,7 +171,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     y = np.array(y_all[learn_options["target_name"]].values[:, None], dtype=np.float64)
 
     # concatenate feature sets in to one nparray, and get dimension of each
-    inputs, dim, dimsum, feature_names = concatenate_feature_sets(feature_sets)
+    inputs, _, dimsum, feature_names = concatenate_feature_sets(feature_sets)
 
     if not CV:
         if learn_options["cv"] != "gene" :
