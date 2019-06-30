@@ -3,8 +3,10 @@ import scipy.stats as st
 
 
 def pearson_weighted(x, y, w=None):
-    assert len(x.shape) == 1
-    assert len(y.shape) == 1
+    if len(x.shape) != 1:
+        raise AssertionError()
+    if len(y.shape) != 1:
+        raise AssertionError()
 
     if w is None:
         w = np.ones_like(y)
