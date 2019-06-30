@@ -1,7 +1,6 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c6227139d9d747e8a2f7934a1ca17396)](https://app.codacy.com/app/milescsmith/Azimuth?utm_source=github.com&utm_medium=referral&utm_content=milescsmith/Azimuth&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.com/milescsmith/Azimuth.svg?branch=master)](https://travis-ci.com/milescsmith/Azimuth)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/d807b8b187334d119d8a50ab77b9d107)](https://www.codacy.com/app/milescsmith/Azimuth?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=milescsmith/Azimuth&amp;utm_campaign=Badge_Grade)
 [![License](https://img.shields.io/pypi/l/azimuth.svg)]()
 # Achtung!
 
