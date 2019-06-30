@@ -37,5 +37,6 @@ setup(
         "theanets @ git+https://github.com/lmjohns3/theanets",
         "glmnet_py",
         "dill",
+        "matplotlib >= 3.0"
     ],
 )
