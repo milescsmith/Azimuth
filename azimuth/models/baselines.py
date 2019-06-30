@@ -67,9 +67,9 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
             )[:, 1]
 
             fpr, tpr, _ = roc_curve(y_bin[train][test_inner], y_test)
-            if np.nan in fpr :
+            if np.nan in fpr:
                 raise AssertionError("found nan fpr")
-            if np.nan in tpr :
+            if np.nan in tpr:
                 raise AssertionError("found nan tpr")
             roc_auc = auc(fpr, tpr)
             if verbose:
@@ -92,9 +92,9 @@ def doench_on_fold(train, test, y, y_all, X, learn_options):
 
 
 def sgrna_from_doench_on_fold(feature_sets, test, X):
-    if len(feature_sets) != 1 :
+    if len(feature_sets) != 1:
         raise AssertionError("should only use sgRNA Score here")
-    if list(feature_sets.keys())[0] != "sgRNA Score" :
+    if list(feature_sets.keys())[0] != "sgRNA Score":
         raise AssertionError()
     y_pred = X[test][:, 0]
     return y_pred, None

@@ -46,7 +46,7 @@ def convert_to_thirty_one(guide_seq, gene, strand):
             f"returning sequence+'A', could not find guide {guide_seq} in gene {gene}"
         )
         return gene_seq + "A"
-    if gene_seq[ind : (ind + len(guide_seq))] != guide_seq :
+    if gene_seq[ind : (ind + len(guide_seq))] != guide_seq:
         raise AssertionError("match not right")
     new_mer = gene_seq[(ind - 1) : (ind + len(guide_seq))]
     # this actually tacks on an extra one at the end for some reason
@@ -62,15 +62,15 @@ def concatenate_feature_sets(feature_sets, keys=None):
     of each set
     Returns: inputs, dim
     """
-    if feature_sets == {} :
+    if feature_sets == {}:
         raise AssertionError("no feature sets present")
     if keys is None:
         keys = list(feature_sets.keys())
 
     F = feature_sets[keys[0]].shape[0]
-    for assemblage in feature_sets :
+    for assemblage in feature_sets:
         F2 = feature_sets[assemblage].shape[0]
-        if F != F2 :
+        if F != F2:
             raise AssertionError(
                 f"not same # individuals for features {keys[0]} and {assemblage}"
             )
@@ -133,7 +133,7 @@ def get_gene_sequence(gene_name):
     return seq
 
 
-def get_ranks(y, thresh=0.8, prefix="", flip=False) :
+def get_ranks(y, thresh=0.8, prefix="", flip=False):
     """
     y should be a DataFrame with one column
     thresh is the threshold at which to call it a knock-down or not
@@ -166,7 +166,7 @@ def get_ranks(y, thresh=0.8, prefix="", flip=False) :
     if flip:
         y_rank_raw = 1.0 - y_rank_raw
     y_rank_raw.columns = [prefix + "rank raw"]
-    if np.any(np.isnan(y_rank)) :
+    if np.any(np.isnan(y_rank)):
         raise AssertionError("found NaN in ranks")
 
     y_quantized = y_threshold.copy()
@@ -278,7 +278,7 @@ def extract_feature_from_model_sum(method, results, split, indexes):
 
 
 def feature_importances(results):
-    for method in results :
+    for method in results:
         feature_names = results[method][6]
 
         seen = set()
@@ -288,7 +288,7 @@ def feature_importances(results):
                 uniq.append(ft)
             else:
                 seen.add(ft)
-        if seen :
+        if seen:
             raise Exception(f"feature name appears more than once: {seen}")
 
         pd_order1, pi_order1, pd_order2, pi_order2, nggx = [], [], [], [], []
@@ -328,10 +328,10 @@ def feature_importances(results):
 
         feature_importances_grouped = {}
         for k in grouped_feat:
-            if not grouped_feat[k] :
+            if not grouped_feat[k]:
                 continue
             else:
-                for split in results[method][3] :
+                for split in results[method][3]:
                     split_feat_importance = extract_feature_from_model_sum(
                         method, results, split, grouped_feat[k]
                     )
@@ -341,7 +341,7 @@ def feature_importances(results):
                         feature_importances_grouped[k].append(split_feat_importance)
 
         all_split_importances = None
-        for split in results[method][3] :
+        for split in results[method][3]:
 
             split_feat_importance = extract_feature_from_model(method, results, split)
 
@@ -380,7 +380,7 @@ def feature_importances(results):
 
         for i in range(df.shape[0]):
             thisfeat = df["Feature name"].iloc[i]
-            if thisfeat in feature_dictionary :
+            if thisfeat in feature_dictionary:
                 df["Feature name"].iloc[i] = feature_dictionary[thisfeat]
 
         return df

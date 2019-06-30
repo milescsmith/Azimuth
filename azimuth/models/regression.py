@@ -77,11 +77,11 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     (L1/L2 penalized) logistic reggresion using scikitlearn
     """
 
-    if len(np.unique(y)) > 2 :
+    if len(np.unique(y)) > 2:
         raise AssertionError("if using logreg need binary targets")
-    if learn_options["weighted"] is not None :
+    if learn_options["weighted"] is not None:
         raise AssertionError("cannot do weighted Log reg")
-    if learn_options["feature_select"] is True :
+    if learn_options["feature_select"] is True:
         raise AssertionError(
             "cannot do feature selection yet in logistic regression--see "
             "linreg_on_fold to implement"
@@ -89,7 +89,7 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
 
     cv, n_folds = set_up_inner_folds(learn_options, y_all.iloc[train])
 
-    if learn_options["penalty"] != "L1" and learn_options["penalty"] != "L2" :
+    if learn_options["penalty"] != "L1" and learn_options["penalty"] != "L2":
         raise AssertionError("can only use L1 or L2 with logistic regression")
 
     tol = 0.00001
@@ -118,9 +118,9 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
                     y_all[learn_options["ground_truth_label"]][train][test_inner],
                     tmp_pred,
                 )
-                if np.any(np.isnan(fpr)) :
+                if np.any(np.isnan(fpr)):
                     raise AssertionError("found nan fpr")
-                if np.any(np.isnan(tpr)) :
+                if np.any(np.isnan(tpr)):
                     raise AssertionError("found nan tpr")
 
                 tmp_auc = auc(fpr, tpr)
@@ -131,7 +131,7 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     performance /= n_folds
 
     max_score_ind = np.where(performance == np.nanmax(performance))
-    if max_score_ind == len(performance) :
+    if max_score_ind == len(performance):
         raise AssertionError("enlarge alpha range as hitting max boundary")
 
     # in the unlikely event of tied scores, take the first one.
@@ -168,7 +168,7 @@ def logreg_on_fold(train, test, y, y_all, X, learn_options):
     return y_pred, clf
 
 
-def linreg_on_fold(train, test, y, y_all, X, learn_options) :
+def linreg_on_fold(train, test, y, y_all, X, learn_options):
     """
     linreg using scikitlearn, using more standard regression models with penalization requiring
     nested-cross-validation
@@ -226,9 +226,9 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options) :
                         y_all[learn_options["ground_truth_label"]][train][test_inner],
                         tmp_pred,
                     )
-                    if np.any(np.isnan(fpr)) :
+                    if np.any(np.isnan(fpr)):
                         raise AssertionError("found nan fpr")
-                    if np.any(np.isnan(tpr)) :
+                    if np.any(np.isnan(tpr)):
                         raise AssertionError("found nan tpr")
                     tmp_auc = auc(fpr, tpr)
                     performance[i, j] += tmp_auc
@@ -251,7 +251,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options) :
                     )
 
                 elif learn_options["training_metric"] == "NDCG":
-                    if "thresh" in learn_options["ground_truth_label"] :
+                    if "thresh" in learn_options["ground_truth_label"]:
                         raise AssertionError(
                             "for NDCG must not use thresholded ranks, but pure " "ranks"
                         )
@@ -273,7 +273,7 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options) :
     performance /= n_folds
 
     max_score_ind = np.where(performance == np.nanmax(performance))
-    if max_score_ind == len(performance) :
+    if max_score_ind == len(performance):
         raise AssertionError("enlarge alpha range as hitting max boundary")
 
     # in the unlikely event of tied scores, take the first one.
@@ -315,11 +315,11 @@ def linreg_on_fold(train, test, y, y_all, X, learn_options) :
 
 
 def feature_select(clf, learn_options, test_inner, train_inner, X, y):
-    if learn_options["weighted"] is not None :
+    if learn_options["weighted"] is not None:
         raise AssertionError(
             "cannot currently do feature selection with weighted regression"
         )
-    if learn_options["loss"] == "huber" :
+    if learn_options["loss"] == "huber":
         raise AssertionError("won't use huber loss function with feature selection")
     non_zero_coeff = clf.coef_ != 0.0
     if non_zero_coeff.sum() > 0:
@@ -383,7 +383,7 @@ def set_up_inner_folds(learn_options: dict, y):
         or learn_options["cv"] == "stratified"
         or n_genes == 1
     ):
-        if "n_folds" not in learn_options :
+        if "n_folds" not in learn_options:
             n_splits = len(np.unique(gene_classes))
         else:
             n_splits = learn_options["n_folds"]

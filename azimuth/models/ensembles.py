@@ -111,7 +111,7 @@ def adaboost_on_fold(train, test, y, y_all, X, learn_options, classification=Fal
 
                 clf.fit(X[train], y[train].flatten())
             elif learn_options["algorithm_hyperparam_search"] == "grid":
-                if classification :
+                if classification:
                     raise AssertionError(
                         "need to tweak code below to do classificaton, as above"
                     )
@@ -170,7 +170,7 @@ def LASSOs_ensemble_on_fold(feature_sets, train, test, y, y_all, X, learn_option
     validations = np.zeros((len(valid_indices), len(feature_sets)))
     predictions = np.zeros((test.sum(), len(feature_sets)))
 
-    for i, feature_name in enumerate(feature_sets) :
+    for i, feature_name in enumerate(feature_sets):
         X_feature = feature_sets[feature_name].values
         y_pred, m = linreg_on_fold(train, test, y, y_all, X, learn_options)
         predictions[:, i] = m.predict(X_feature[test]).flatten()

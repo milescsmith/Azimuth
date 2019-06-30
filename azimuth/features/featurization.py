@@ -25,7 +25,7 @@ def featurize_data(
     all_lens = data["30mer"].apply(len).values
     unique_lengths = np.unique(all_lens)
     num_lengths = len(unique_lengths)
-    if num_lengths != 1 :
+    if num_lengths != 1:
         raise AssertionError(
             f"should only have sequences of a single length, "
             f"but found {num_lengths}: {unique_lengths}"
@@ -120,7 +120,7 @@ def featurize_data(
 
     if learn_options["include_microhomology"]:
         feature_sets["microhomology"] = get_micro_homology_features(
-            Y["Target gene"], learn_options, data
+            Y["Target gene"], data
         )
 
     time_1 = time()
@@ -144,24 +144,24 @@ def check_feature_set(feature_sets):
     """
     Ensure the # of people is the same in each feature set
     """
-    if feature_sets == {} :
+    if feature_sets == {}:
         raise AssertionError("no feature sets present")
 
     N = None
-    for ft in feature_sets :
+    for ft in feature_sets:
         N2 = feature_sets[ft].shape[0]
         if N is None:
             N = N2
         else:
-            if N < 1 :
+            if N < 1:
                 raise AssertionError("should be at least one individual")
-            if N != N2 :
+            if N != N2:
                 raise AssertionError(
                     "# of individuals do not match up across feature sets"
                 )
 
-    for item in feature_sets :
-        if np.any(np.isnan(feature_sets[item])) :
+    for item in feature_sets:
+        if np.any(np.isnan(feature_sets[item])):
             raise Exception(f"found Nan in set {item}")
 
 
@@ -217,7 +217,7 @@ def countGC(s, length_audit=True):
     GC content for only the 20mer, as per the Doench paper/code
     """
     if length_audit:
-        if len(s) != 30 :
+        if len(s) != 30:
             raise AssertionError("seems to assume 30mer")
     return len(s[4:24].replace("A", "").replace("T", ""))
 
@@ -236,7 +236,7 @@ def SeqUtilFeatures(data):
     num_features = 1
     featarray = np.ones((sequence.shape[0], num_features))
     for i, seq in enumerate(sequence):
-        if len(seq) != 30 :
+        if len(seq) != 30:
             raise AssertionError("seems to assume 30mer")
         featarray[i, 0] = SeqUtil.molecular_weight(str(seq))
 
@@ -267,30 +267,30 @@ def get_micro_homology_features(gene_names, X):
     # number of nulceotides to take to the left and right of the guide
     K_MER_LENGTH_LEFT = 9
     K_MER_LENGTH_RIGHT = 21
-    for gene in gene_names.unique() :
+    for gene in gene_names.unique():
         gene_seq = Seq.Seq(util.get_gene_sequence(gene)).reverse_complement()
         guide_inds = np.where(gene_names.values == gene)[0]
         print(
             f"getting microhomology for all {len(guide_inds)} guides in gene {gene}"
         )
-        for ps in guide_inds :
+        for ps in guide_inds:
             guide_seq = Seq.Seq(X["30mer"][ps])
             strand = X["Strand"][ps]
-            if strand == "sense" :
+            if strand == "sense":
                 gene_seq = gene_seq.reverse_complement()
             # figure out the sequence to the left and right of this guide, in the gene
             ind = gene_seq.find(guide_seq)
-            if ind == -1 :
+            if ind == -1:
                 gene_seq = gene_seq.reverse_complement()
                 ind = gene_seq.find(guide_seq)
-            else :
+            else:
                 pass
-            if ind == -1 :
+            if ind == -1:
                 mh_score = 0
                 oof_score = 0
-            else :
+            else:
 
-                if gene_seq[ind : (ind + len(guide_seq))] != guide_seq :
+                if gene_seq[ind : (ind + len(guide_seq))] != guide_seq:
                     raise AssertionError("match not right")
 
                 left_win = gene_seq[(ind - K_MER_LENGTH_LEFT) : ind]
@@ -299,12 +299,12 @@ def get_micro_homology_features(gene_names, X):
                                     ind + len(guide_seq) + K_MER_LENGTH_RIGHT
                             )
                             ]
-                if len(left_win.tostring()) != K_MER_LENGTH_LEFT :
+                if len(left_win.tostring()) != K_MER_LENGTH_LEFT:
                     raise AssertionError()
-                if len(right_win.tostring()) != K_MER_LENGTH_RIGHT :
+                if len(right_win.tostring()) != K_MER_LENGTH_RIGHT:
                     raise AssertionError()
                 sixtymer = str(left_win) + str(guide_seq) + str(right_win)
-                if len(sixtymer) != 60 :
+                if len(sixtymer) != 60:
                     raise AssertionError("should be of length 60")
                 mh_score, oof_score = compute_score(sixtymer)
 
@@ -333,9 +333,9 @@ def local_gene_seq_features(gene_names, learn_options, X):
             # figure out the sequence to the left and right of this guide, in the gene
             ind = gene_seq.find(guide_seq)
             if ind == -1:
-                if ind == -1 :
+                if ind == -1:
                     raise AssertionError("could not find guide in gene")
-            if gene_seq[ind :(ind + len(guide_seq))] != guide_seq :
+            if gene_seq[ind :(ind + len(guide_seq))] != guide_seq:
                 raise AssertionError("match not right")
             left_win = gene_seq[(ind - k_mer_length) : ind]
             right_win = gene_seq[
@@ -347,9 +347,9 @@ def local_gene_seq_features(gene_names, learn_options, X):
                 # to keep them in the same relative alphabet/direction
                 left_win = left_win.reverse_complement()
                 right_win = right_win.reverse_complement()
-            if left_win.tostring() == "" :
+            if left_win.tostring() == "":
                 raise AssertionError(f"k_mer_context, {k_mer_length}, is too large")
-            if len(left_win) != len(right_win) :
+            if len(left_win) != len(right_win):
                 raise AssertionError(f"k_mer_context, {k_mer_length}, is too large")
             feat.ix[ps, "gene_left_win"] = left_win.tostring()
             feat.ix[ps, "gene_right_win"] = right_win.tostring()
@@ -429,7 +429,7 @@ def gene_guide_feature(Y, X, learn_options):
     # else:
     feature_sets = local_gene_seq_features(Y["Target gene"], learn_options, X)
     print(f"writing local gene seq feats to file {gene_file}")
-    with open(gene_file, "wb") as file_to_open :
+    with open(gene_file, "wb") as file_to_open:
         dump(feature_sets, file_to_open)
 
     return feature_sets
@@ -450,7 +450,7 @@ def Tm_feature(data, pam_audit=True, learn_options=None):
         3-the Tm of the DNA:RNA hybrid from position 3 - 7  (i.e. 5 nt)
     """
 
-    if learn_options is None or "Tm segments" not in learn_options :
+    if learn_options is None or "Tm segments" not in learn_options:
         segments = [(19, 24), (11, 19), (6, 11)]
     else:
         segments = learn_options["Tm segments"]
@@ -522,11 +522,11 @@ def apply_nucleotide_features(
             nucleotide_features,
             args=(order, max_index_to_use, prefix, "pos_independent"),
         )
-        if np.any(np.isnan(feat_pd)) :
+        if np.any(np.isnan(feat_pd)):
             raise AssertionError(
                 "nans here can arise from sequences of different lengths"
             )
-        if np.any(np.isnan(feat_pi)) :
+        if np.any(np.isnan(feat_pi)):
             raise AssertionError(
                 "nans here can arise from sequences of different lengths"
             )
@@ -534,7 +534,7 @@ def apply_nucleotide_features(
         feat_pd = seq_data_frame.apply(
             nucleotide_features, args=(order, max_index_to_use, prefix, "pos_dependent")
         )
-        if np.any(np.isnan(feat_pd)) :
+        if np.any(np.isnan(feat_pd)):
             raise AssertionError("found nan in feat_pd")
         feat_pi = None
     return feat_pd, feat_pi
@@ -558,7 +558,7 @@ def nucleotide_features(
     (e.g. for a sequence of length 30, there are 30*4 single nucleotide features
           and (30-1)*4^2=464 double nucleotide features
     """
-    if not feature_type in ["all", "pos_independent", "pos_dependent"] :
+    if not feature_type in ["all", "pos_independent", "pos_dependent"]:
         raise AssertionError("Unknown feature_type")
     if max_index_to_use <= len(s):
         max_index_to_use = len(s)
@@ -590,9 +590,9 @@ def nucleotide_features(
         if (
                 index_dependent[alphabet.index(nucl) + (position * len(alphabet))]
                 != f"{prefix}{nucl}_{position:d}"
-        ) :
+        ):
             raise AssertionError()
-        if index_independent[alphabet.index(nucl)] != f"{prefix}{nucl}" :
+        if index_independent[alphabet.index(nucl)] != f"{prefix}{nucl}":
             raise AssertionError()
 
     if np.any(np.isnan(features_pos_dependent)):
@@ -600,21 +600,21 @@ def nucleotide_features(
     if np.any(np.isnan(features_pos_independent)):
         raise Exception("found nan features in features_pos_independent")
 
-    if feature_type in ("all", "pos_independent") :
+    if feature_type in ("all", "pos_independent"):
         if feature_type == "all":
             res = Series(features_pos_dependent, index=index_dependent).append(
                 Series(features_pos_independent, index=index_independent)
             )
-            if np.any(np.isnan(res.values)) :
+            if np.any(np.isnan(res.values)):
                 raise AssertionError()
         else:
             res = Series(features_pos_independent, index=index_independent)
-            if np.any(np.isnan(res.values)) :
+            if np.any(np.isnan(res.values)):
                 raise AssertionError()
-    else :
+    else:
         res = Series(features_pos_dependent, index=index_dependent)
 
-    if np.any(np.isnan(res.values)) :
+    if np.any(np.isnan(res.values)):
         raise AssertionError()
     return res
 
@@ -657,9 +657,9 @@ def nucleotide_features_dictionary(prefix=""):
         for letter in alphabet:
             feature_names_indep.append(f"{letter}")
 
-        if len(feature_names_indep) != len(index_independent) :
+        if len(feature_names_indep) != len(index_independent):
             raise AssertionError()
-        if len(feature_names_dep) != len(index_dependent) :
+        if len(feature_names_dep) != len(index_dependent):
             raise AssertionError()
 
     index_all = index_dependent + index_independent
@@ -682,7 +682,7 @@ def normalize_feature_sets(feature_sets):
         new_feature_sets[fset] = normalize_features(feature_sets[fset], axis=0)
         if np.any(np.isnan(new_feature_sets[fset].values)):
             raise Exception(f"found Nan feature values in set={fset}")
-        if new_feature_sets[fset].shape[1] <= 0 :
+        if new_feature_sets[fset].shape[1] <= 0:
             raise AssertionError("0 columns of features")
     t2 = time()
     print(f"\t\tElapsed time for normalizing features is {(t2 - t1):.2f} seconds")

@@ -2,7 +2,7 @@ import numpy as np
 
 
 def weighted_degree_kxx(x: int, xp: int, d: int) -> int:
-    if len(x) != len(xp) :
+    if len(x) != len(xp):
         raise AssertionError()
     l: int = len(x)
     sim: int = 0
@@ -11,7 +11,7 @@ def weighted_degree_kxx(x: int, xp: int, d: int) -> int:
         beta_k = 2 * (d - k + 1) / float((d * (d + 1)))
         sim_k = 0
         for i in range(1, l - k + 1):
-            if x[i : i + k] == xp[i : i + k] :
+            if x[i : i + k] == xp[i : i + k]:
                 sim_k += 1.0
         sim += beta_k * sim_k
 

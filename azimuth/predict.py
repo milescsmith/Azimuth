@@ -30,7 +30,7 @@ def fill_in_truth_and_predictions(
         )
     )
 
-    if "raw_target_name" in learn_options :
+    if "raw_target_name" in learn_options:
         truth[fold]["raw"] = np.hstack(
             (
                 truth[fold]["raw"],
@@ -72,7 +72,7 @@ def construct_filename(learn_options, TEST):
 
 
 def extract_fpr_tpr_for_fold(aucs, y_binary, test, y_pred):
-    if len(np.unique(y_binary)) > 2 :
+    if len(np.unique(y_binary)) > 2:
         raise AssertionError("if using AUC need binary targets")
     fpr, tpr, _ = roc_curve(y_binary[test], y_pred)
     roc_auc = auc(fpr, tpr)
@@ -90,7 +90,7 @@ def extract_spearman_for_fold(metrics, y_ground_truth, test, y_pred):
     spearman = np.nan_to_num(
         spearmanr(y_ground_truth[test].flatten(), y_pred.flatten())[0]
     )
-    if np.isnan(spearman) :
+    if np.isnan(spearman):
         raise AssertionError("found nan spearman")
     metrics.append(spearman)
 
@@ -153,13 +153,13 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         "xu_et_al",
     ]
 
-    if learn_options["method"] not in allowed_methods :
+    if learn_options["method"] not in allowed_methods:
         raise AssertionError("invalid method: {learn_options['method']}")
     if (
             learn_options["method"] != "linreg"
             or learn_options["penalty"] != "L2"
             and learn_options["weighted"] is not None
-    ) :
+    ):
         raise AssertionError("weighted only works with linreg L2 right now")
 
     # construct filename from options
@@ -174,7 +174,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     inputs, _, dimsum, feature_names = concatenate_feature_sets(feature_sets)
 
     if not CV:
-        if learn_options["cv"] != "gene" :
+        if learn_options["cv"] != "gene":
             raise AssertionError(
                 "Must use gene-CV when CV is False (I need to use all of the "
                 "genes and stratified complicates that)"
@@ -183,7 +183,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     # set-up for cross-validation
     # for outer loop, the one Doench et al use genes for
     if learn_options["cv"] == "stratified":
-        if "extra_pairs" in learn_options or learn_options["extra pairs"] :
+        if "extra_pairs" in learn_options or learn_options["extra pairs"]:
             raise AssertionError(
                 "can't use extra pairs with stratified CV need to figure out how to properly "
                 "account for genes affected by two drugs"
@@ -191,7 +191,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
         label_encoder = LabelEncoder()
         label_encoder.fit(y_all["Target gene"].values)
         gene_classes = label_encoder.transform(y_all["Target gene"].values)
-        if "n_folds" in learn_options :
+        if "n_folds" in learn_options:
             n_splits = learn_options["n_folds"]
         elif (
             learn_options["train_genes"] is not None
@@ -227,7 +227,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             if (
                     learn_options["train_genes"] is None
                     or learn_options["test_genes"] is None
-            ) :
+            ):
                 raise AssertionError("use both or neither")
             for i, gene in enumerate(learn_options["test_genes"]):
                 cv.append(get_train_test(gene, y_all, learn_options["train_genes"]))
@@ -257,9 +257,9 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 cv_i_orig = deepcopy(cv[i])
                 cv[i] = (filtered_train, test)
                 if learn_options["num_genes_remove_train"] == 0:
-                    if np.any(cv_i_orig[0] != cv[i][0]) :
+                    if np.any(cv_i_orig[0] != cv[i][0]):
                         raise AssertionError()
-                    if np.any(cv_i_orig[1] != cv[i][1]) :
+                    if np.any(cv_i_orig[1] != cv[i][1]):
                         raise AssertionError()
                 print(
                     f"# train/train after/before is {len(cv[i][0])}, {len(cv_i_orig[0])}"
@@ -420,7 +420,7 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                 )
             elif learn_options["method"] == "linreg":
                 y_pred, m[i] = regression.linreg_on_fold(
-                    train, test, y, y_all, X, learn_options, i
+                    train, test, y, y_all, X, learn_options
                 )
             elif learn_options["method"] == "logregL1":
                 y_pred, m[i] = regression.logreg_on_fold(

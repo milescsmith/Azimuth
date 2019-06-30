@@ -103,7 +103,7 @@ def precision_at_k(r, k):
         ValueError: len(r) must be >= k
         :param k:
     """
-    if k < 1 :
+    if k < 1:
         raise AssertionError()
     r = np.asarray(r)[:k] != 0
     if r.size != k:
@@ -270,15 +270,15 @@ def ndcg_at_k_ties(
     if isinstance(predictions, list):
         predictions = np.array(predictions)
 
-    if len(labels.shape) != 1 and np.min(labels.shape) != 1 :
+    if len(labels.shape) != 1 and np.min(labels.shape) != 1:
         raise AssertionError("should be 1D array or equivalent")
-    if len(predictions.shape) != 1 and np.min(predictions.shape) != 1 :
+    if len(predictions.shape) != 1 and np.min(predictions.shape) != 1:
         raise AssertionError("should be 1D array or equivalent")
 
     labels = labels.flatten()
     predictions = predictions.flatten()
 
-    if np.any(labels.shape != predictions.shape) :
+    if np.any(labels.shape != predictions.shape):
         raise AssertionError("labels and predictions should have the same shape")
 
     if k is None:
@@ -299,11 +299,11 @@ def ndcg_at_k_ties(
     else:
         dcg_min = 0
     numerator = dcg - dcg_min
-    if numerator <= -1e-5 :
+    if numerator <= -1e-5:
         raise AssertionError()
     numerator = np.max((0, numerator))
     ndcg = numerator / (dcg_max - dcg_min)
-    if not 1.0 >= ndcg >= 0.0 :
+    if not 1.0 >= ndcg >= 0.0:
         raise AssertionError(f"ndcg={ndcg} should be in [0,1]")
     if not dcg_max:
         ndcg = 0.0
@@ -332,7 +332,7 @@ def dcg_helper(discount_factors, gain, k, labels, method, predictions):
             ii += 1
         avg_gain = cum_tied_gain / num_ties
         dcg += avg_gain * cum_tied_disc
-        if np.isnan(dcg) :
+        if np.isnan(dcg):
             raise AssertionError("found nan dcg")
     return dcg
 
@@ -345,11 +345,11 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     'predictions' are the algorithm predictions corresponding to each label
     Also, http://en.wikipedia.org/wiki/Discounted_cumulative_gain for basic defns
     """
-    if not isinstance(predictions, np.ndarray) :
+    if not isinstance(predictions, np.ndarray):
         raise AssertionError()
-    if len(labels) != len(predictions) :
+    if len(labels) != len(predictions):
         raise AssertionError("labels and predictions should be of same length")
-    if k > len(labels) :
+    if k > len(labels):
         raise AssertionError("k should be <= len(labels)")
 
     # order both labels and preds so that they are in order of decreasing predictive score
@@ -376,7 +376,7 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     elif method == 3:
         discount_factors = get_discount_factors(len(labels), discount="combination")
     elif method == 4:
-        if theta is None :
+        if theta is None:
             raise AssertionError("need to specify theta or theta")
         discount_factors = get_discount_factors(
             len(labels), discount="1/rtheta", theta=theta
@@ -385,11 +385,11 @@ def dcg_at_k_ties(labels, predictions, k, method=0, theta=None):
     else:
         raise NotImplementedError()
 
-    if len(discount_factors) != len(labels) :
+    if len(discount_factors) != len(labels):
         raise AssertionError("discount factors has wrong length")
 
     dcg = dcg_helper(discount_factors, gain, k, labels, method, predictions)
-    if np.isnan(dcg) :
+    if np.isnan(dcg):
         raise AssertionError("found nan dcg")
 
     return dcg
@@ -420,7 +420,7 @@ def rank_data(r, rground):
     # we checked this heavily, and is correct, e.g. rground will go from largest rank to smallest
     r = rankdata(r)
     rground = rankdata(rground)
-    if np.sum(r) != np.sum(rground) :
+    if np.sum(r) != np.sum(rground):
         raise AssertionError("ranks should add up to the same")
     return r, rground
 
@@ -482,9 +482,9 @@ def ndcg_at_k_swap_perm_test(
     else:
         true_labels = true_labels.flatten()
 
-    if len(preds1) != len(preds2) :
+    if len(preds1) != len(preds2):
         raise AssertionError("need same number of preditions from each model")
-    if len(preds1) != len(true_labels) :
+    if len(preds1) != len(true_labels):
         raise AssertionError("need same number of preditions in truth and predictions")
     N = len(preds1)
 
@@ -521,10 +521,10 @@ def ndcg_at_k_swap_perm_test(
         pval = 1.0
     else:
         zero_ind = true_labels == 0
-        if np.sum(zero_ind) >= len(zero_ind) :
+        if np.sum(zero_ind) >= len(zero_ind):
             raise AssertionError("balancing assumes there are more zeros than ones")
 
-        for _ in range(nperm) :
+        for _ in range(nperm):
             pair_ind_to_swap = np.random.rand(N) < 0.5
 
             ranks1_perm = ranks1.copy()
@@ -550,7 +550,7 @@ def ndcg_at_k_swap_perm_test(
                 theta=theta,
             )
 
-            for thing in theta :
+            for thing in theta:
                 tmp_diff = np.abs(ndcg1_perm[thing] - ndcg2_perm[thing])
                 perm_ndcg_diff[thing][_] = tmp_diff
 

@@ -25,7 +25,7 @@ def compute_score(
     for k in range(2, left)[::-1]:
         for j in range(left, left + right - k + 1):
             for i in range(0, left - k + 1):
-                if seq[i : i + k] == seq[j : j + k] :
+                if seq[i : i + k] == seq[j : j + k]:
                     length = j - i
                     file_temp.write(
                         seq[i : i + k]
@@ -55,7 +55,7 @@ def compute_score(
             sum_score_3 = 0
             sum_score_not_3 = 0
 
-            for i in enumerate(list_f1) :
+            for i in enumerate(list_f1):
                 n = 0
                 score_3 = 0
                 score_not_3 = 0

@@ -32,7 +32,7 @@ def main(
     adaboost_num_estimators,
     adaboost_CV,
     output_dir,
-    exp_name,
+    exp_name=None,
 ):
     """command-line version of model_comparison.py
     \f
