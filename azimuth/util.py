@@ -187,9 +187,7 @@ def get_data(data, y_names, organism="human", target_gene=None):
     for y_name in y_names:  # for each cell type
         y = pd.DataFrame(data[y_name])
         # these thresholds/quantils are not used:
-        y_rank, y_rank_raw, y_threshold, _ = get_ranks(
-            y, thresh=thresh, flip=False,
-        )
+        y_rank, y_rank_raw, y_threshold, _ = get_ranks(y, thresh=thresh, flip=False)
         y_rank.columns = [y_name + " rank"]
         y_rank_raw.columns = [y_name + " rank raw"]
         y_threshold.columns = [y_name + " threshold"]

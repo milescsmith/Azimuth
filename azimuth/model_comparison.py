@@ -31,13 +31,13 @@ def set_target(learn_options, classification):
 
     if learn_options["V"] == 3:
         if (
-                learn_options["target_name"] != "score_drug_gene_rank"
-                and learn_options["target_name"] != "score_drug_gene_threshold"
+            learn_options["target_name"] != "score_drug_gene_rank"
+            and learn_options["target_name"] != "score_drug_gene_threshold"
         ):
             raise AssertionError("cannot use raw scores when mergind data")
         if (
-                learn_options["ground_truth_label"] != "score_drug_gene_rank"
-                and learn_options["ground_truth_label"] != "score_drug_gene_threshold"
+            learn_options["ground_truth_label"] != "score_drug_gene_rank"
+            and learn_options["ground_truth_label"] != "score_drug_gene_threshold"
         ):
             raise AssertionError("cannot use raw scores when mergind data")
 
@@ -657,7 +657,8 @@ def predict(
 
     Parameters
     ----------
-    seq : numpy array of 30 nt sequences.
+    seq : :class:np.ndarray 
+        numpy array of 30 nt sequences.
     aa_cut : numpy array of amino acid cut positions (optional).
     percent_peptide : numpy array of percent peptide (optional).
     model : model instance to use for prediction (optional).
@@ -752,12 +753,8 @@ def predict(
 
     # also check that predictions are not 0/1 from a classifier.predict()
     # (instead of predict_proba() or decision_function())
-    unique_preds = np.unique(preds)
-    ok = False
-    for pr in unique_preds:
-        if pr not in [0, 1]:
-            ok = True
-    if not ok:
+
+    if np.all([True if pr in (0, 1) else False for pr in np.unique(preds)]):
         raise AssertionError("model returned only 0s and 1s")
     return preds
 

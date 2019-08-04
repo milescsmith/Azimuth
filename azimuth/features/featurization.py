@@ -7,8 +7,8 @@ import Bio.Seq as Seq
 import Bio.SeqUtils as SeqUtil
 import Bio.SeqUtils.MeltingTemp as Tm
 import numpy as np
+import pandas as pd
 from dill import dump
-from pandas import DataFrame, Series, concat
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 from azimuth import util
@@ -22,14 +22,9 @@ def featurize_data(
     assumes that data contains the 30mer
     returns set of features from which one can make a kernel for each one
     """
-    all_lens = data["30mer"].apply(len).values
-    unique_lengths = np.unique(all_lens)
-    num_lengths = len(unique_lengths)
-    if num_lengths != 1:
-        raise AssertionError(
-            f"should only have sequences of a single length, "
-            f"but found {num_lengths}: {unique_lengths}"
-        )
+
+    if np.any(data["30mer"].str.len() != 30):
+        raise AssertionError(f"should only have sequences 30 nt long")
 
     if not quiet:
         print("Constructing features...")
@@ -52,14 +47,14 @@ def featurize_data(
 
     if learn_options["gc_features"]:
         gc_above_10, gc_below_10, gc_count = gc_features(data, length_audit)
-        feature_sets["gc_above_10"] = DataFrame(gc_above_10)
-        feature_sets["gc_below_10"] = DataFrame(gc_below_10)
-        feature_sets["gc_count"] = DataFrame(gc_count)
+        feature_sets["gc_above_10"] = pd.DataFrame(gc_above_10)
+        feature_sets["gc_below_10"] = pd.DataFrame(gc_below_10)
+        feature_sets["gc_count"] = pd.DataFrame(gc_count)
 
     if learn_options["include_gene_position"]:
         for item in gene_position.columns:
             set_name = item
-            feature_sets[set_name] = DataFrame(gene_position[item])
+            feature_sets[set_name] = pd.DataFrame(gene_position[item])
         feature_sets["Percent Peptide <50%"] = feature_sets["Percent Peptide"] < 50
         feature_sets["Percent Peptide <50%"]["Percent Peptide <50%"] = feature_sets[
             "Percent Peptide <50%"
@@ -74,14 +69,14 @@ def featurize_data(
         one_hot_genes = np.array(
             enc.fit_transform(label_encoder.transform(gene_names)[:, None]).todense()
         )
-        feature_sets["gene effect"] = DataFrame(
+        feature_sets["gene effect"] = pd.DataFrame(
             one_hot_genes,
             columns=[f"gene_{i}" for i in range(one_hot_genes.shape[1])],
             index=gene_names.index,
         )
 
     if learn_options["include_known_pairs"]:
-        feature_sets["known pairs"] = DataFrame(Y["test"])
+        feature_sets["known pairs"] = pd.DataFrame(Y["test"])
 
     if learn_options["include_NGGX_interaction"]:
         feature_sets["NGGX"] = NGGX_interaction_feature(data, pam_audit)
@@ -90,7 +85,7 @@ def featurize_data(
         feature_sets["Tm"] = Tm_feature(data, pam_audit, learn_options=None)
 
     if learn_options["include_sgRNAscore"]:
-        feature_sets["sgRNA Score"] = DataFrame(data["sgRNA Score"])
+        feature_sets["sgRNA Score"] = pd.DataFrame(data["sgRNA Score"])
 
     if learn_options["include_drug"]:
         drug_names = Y.index.get_level_values("drug").tolist()
@@ -100,14 +95,14 @@ def featurize_data(
         one_hot_drugs = np.array(
             enc.fit_transform(label_encoder.transform(drug_names)[:, None]).todense()
         )
-        feature_sets["drug"] = DataFrame(
+        feature_sets["drug"] = pd.DataFrame(
             one_hot_drugs,
             columns=[f"drug_{i:d}" for i in range(one_hot_drugs.shape[1])],
             index=drug_names,
         )
 
     if learn_options["include_strand"]:
-        feature_sets["Strand effect"] = (DataFrame(data["Strand"]) == "sense") * 1
+        feature_sets["Strand effect"] = (pd.DataFrame(data["Strand"]) == "sense") * 1
 
     if learn_options["include_gene_feature"]:
         feature_sets["gene features"] = gene_feature(Y)
@@ -125,7 +120,9 @@ def featurize_data(
 
     time_1 = time()
     if not quiet:
-        print(f"\t\tElapsed time for constructing features is {time_1 - time_0:.2f} seconds")
+        print(
+            f"\t\tElapsed time for constructing features is {time_1 - time_0:.2f} seconds"
+        )
 
     check_feature_set(feature_sets)
 
@@ -171,7 +168,7 @@ def NGGX_interaction_feature(data, pam_audit=True):
     encoding of the NX nucleotides yielding 4x4=16 features
     """
     sequence = data["30mer"].values
-    feat_NX = DataFrame()
+    feat_NX = pd.DataFrame()
     # check that GG is where we think
     for seq in sequence:
         if pam_audit and seq[25:27] != "GG":
@@ -180,7 +177,7 @@ def NGGX_interaction_feature(data, pam_audit=True):
         NX_onehot = nucleotide_features(
             NX, order=2, feature_type="pos_dependent", max_index_to_use=2, prefix="NGGX"
         )
-        feat_NX = concat([feat_NX, NX_onehot], axis=1, sort=True)
+        feat_NX = pd.concat([feat_NX, NX_onehot], axis=1, sort=True)
     return feat_NX.T
 
 
@@ -240,7 +237,7 @@ def SeqUtilFeatures(data):
             raise AssertionError("seems to assume 30mer")
         featarray[i, 0] = SeqUtil.molecular_weight(str(seq))
 
-    feat = DataFrame(DataFrame(featarray))
+    feat = pd.DataFrame(pd.DataFrame(featarray))
     return feat
 
 
@@ -249,7 +246,7 @@ def organism_feature(data):
     Human vs. mouse
     """
     organism = np.array(data["Organism"].values)
-    feat = DataFrame(DataFrame(organism))
+    feat = pd.DataFrame(pd.DataFrame(organism))
     import pdb
 
     pdb.set_trace()
@@ -260,7 +257,7 @@ def get_micro_homology_features(gene_names, X):
     # originally was flipping the guide itself as necessary, but now flipping the gene instead
 
     print("building microhomology features")
-    feat = DataFrame(index=X.index)
+    feat = pd.DataFrame(index=X.index)
     feat["mh_score"] = ""
     feat["oof_score"] = ""
 
@@ -270,9 +267,7 @@ def get_micro_homology_features(gene_names, X):
     for gene in gene_names.unique():
         gene_seq = Seq.Seq(util.get_gene_sequence(gene)).reverse_complement()
         guide_inds = np.where(gene_names.values == gene)[0]
-        print(
-            f"getting microhomology for all {len(guide_inds)} guides in gene {gene}"
-        )
+        print(f"getting microhomology for all {len(guide_inds)} guides in gene {gene}")
         for ps in guide_inds:
             guide_seq = Seq.Seq(X["30mer"][ps])
             strand = X["Strand"][ps]
@@ -295,10 +290,8 @@ def get_micro_homology_features(gene_names, X):
 
                 left_win = gene_seq[(ind - K_MER_LENGTH_LEFT) : ind]
                 right_win = gene_seq[
-                            (ind + len(guide_seq)) : (
-                                    ind + len(guide_seq) + K_MER_LENGTH_RIGHT
-                            )
-                            ]
+                    (ind + len(guide_seq)) : (ind + len(guide_seq) + K_MER_LENGTH_RIGHT)
+                ]
                 if len(left_win.tostring()) != K_MER_LENGTH_LEFT:
                     raise AssertionError()
                 if len(right_win.tostring()) != K_MER_LENGTH_RIGHT:
@@ -312,12 +305,12 @@ def get_micro_homology_features(gene_names, X):
             feat.ix[ps, "oof_score"] = oof_score
         print(f"computed microhomology of {str(gene)}")
 
-    return DataFrame(feat, dtype="float")
+    return pd.DataFrame(feat, dtype="float")
 
 
 def local_gene_seq_features(gene_names, learn_options, X):
     print(f"building local gene sequence features")
-    feat = DataFrame(index=X.index)
+    feat = pd.DataFrame(index=X.index)
     feat["gene_left_win"] = ""
     feat["gene_right_win"] = ""
 
@@ -335,12 +328,12 @@ def local_gene_seq_features(gene_names, learn_options, X):
             if ind == -1:
                 if ind == -1:
                     raise AssertionError("could not find guide in gene")
-            if gene_seq[ind :(ind + len(guide_seq))] != guide_seq:
+            if gene_seq[ind : (ind + len(guide_seq))] != guide_seq:
                 raise AssertionError("match not right")
             left_win = gene_seq[(ind - k_mer_length) : ind]
             right_win = gene_seq[
-                        (ind + len(guide_seq)) : (ind + len(guide_seq) + k_mer_length)
-                        ]
+                (ind + len(guide_seq)) : (ind + len(guide_seq) + k_mer_length)
+            ]
 
             if strand == "antisense":
                 # it's arbitrary which of sense and anti-sense we flip, we just want
@@ -399,7 +392,7 @@ def gene_feature(Y):
     everything = np.concatenate(
         (gene_length, gc_content, temperature, molecular_weight), axis=1
     )
-    df = DataFrame(
+    df = pd.DataFrame(
         data=everything,
         index=gene_names.index,
         columns=[
@@ -473,7 +466,7 @@ def Tm_feature(data, pam_audit=True, learn_options=None):
             seq[segments[2][0] : segments[2][1]], rna=rna
         )  # 5-mer
 
-    feat = DataFrame(
+    feat = pd.DataFrame(
         featarray,
         index=data.index,
         columns=[
@@ -499,7 +492,7 @@ def gc_features(data, audit=True):
 
 def normalize_features(data, axis):
     """
-    input: DataFrame of dtype=np.float64 array, of dimensions
+    input: pd.DataFrame of dtype=np.float64 array, of dimensions
     mean-center, and unit variance each feature
     """
     data -= data.mean(axis)
@@ -588,8 +581,8 @@ def nucleotide_features(
 
         # this is to check that the labels in the pd df actually match the nucl and position
         if (
-                index_dependent[alphabet.index(nucl) + (position * len(alphabet))]
-                != f"{prefix}{nucl}_{position:d}"
+            index_dependent[alphabet.index(nucl) + (position * len(alphabet))]
+            != f"{prefix}{nucl}_{position:d}"
         ):
             raise AssertionError()
         if index_independent[alphabet.index(nucl)] != f"{prefix}{nucl}":
@@ -602,17 +595,17 @@ def nucleotide_features(
 
     if feature_type in ("all", "pos_independent"):
         if feature_type == "all":
-            res = Series(features_pos_dependent, index=index_dependent).append(
-                Series(features_pos_independent, index=index_independent)
+            res = pd.Series(features_pos_dependent, index=index_dependent).append(
+                pd.Series(features_pos_independent, index=index_independent)
             )
             if np.any(np.isnan(res.values)):
                 raise AssertionError()
         else:
-            res = Series(features_pos_independent, index=index_independent)
+            res = pd.Series(features_pos_independent, index=index_independent)
             if np.any(np.isnan(res.values)):
                 raise AssertionError()
     else:
-        res = Series(features_pos_dependent, index=index_dependent)
+        res = pd.Series(features_pos_dependent, index=index_dependent)
 
     if np.any(np.isnan(res.values)):
         raise AssertionError()

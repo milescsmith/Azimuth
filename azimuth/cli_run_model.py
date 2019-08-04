@@ -17,7 +17,7 @@ from .model_comparison import run_models
 @click.option("--adaboost_learning_rate", type=float, default=0.1)
 @click.option("--adaboost_max_depth", type=int, default=3)
 @click.option("--adaboost_num_estimators", type=int, default=100)
-@click.option("--adaboost_CV", dest="adaboost_CV", is_flag=True, default=False)
+@click.option("--adaboost_CV", is_flag=True, default=False)
 @click.option("--output_dir", type=str, default="./")
 @click.option("--exp_name", type=str, default=None)
 @click.help_option()

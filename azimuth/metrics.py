@@ -15,7 +15,7 @@ from time import time
 import numpy as np
 from scipy.stats.mstats import rankdata
 
-from azimuth.elevation.metrics import spearman_weighted_swap_perm_test
+from .elevation.metrics import spearman_weighted_swap_perm_test
 
 
 def mean_reciprocal_rank(relevance_scores: list) -> np.ndarray:
@@ -442,14 +442,7 @@ def ndcg_alt(relevances, rank=20):
 
 
 def ndcg_at_k_swap_perm_test(
-    preds1,
-    preds2,
-    true_labels,
-    nperm,
-    method,
-    k,
-    normalize_from_below_too,
-    theta=None,
+    preds1, preds2, true_labels, nperm, method, k, normalize_from_below_too, theta=None
 ):
     # pVal is the probability that we would observe as big an AUC diff as we
     # did if the ROC curves were drawn from the null hypothesis (which is that

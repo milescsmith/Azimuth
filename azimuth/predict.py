@@ -156,9 +156,9 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     if learn_options["method"] not in allowed_methods:
         raise AssertionError("invalid method: {learn_options['method']}")
     if (
-            learn_options["method"] != "linreg"
-            or learn_options["penalty"] != "L2"
-            and learn_options["weighted"] is not None
+        learn_options["method"] != "linreg"
+        or learn_options["penalty"] != "L2"
+        and learn_options["weighted"] is not None
     ):
         raise AssertionError("weighted only works with linreg L2 right now")
 
@@ -225,8 +225,8 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
             and learn_options["test_genes"] is not None
         ):
             if (
-                    learn_options["train_genes"] is None
-                    or learn_options["test_genes"] is None
+                learn_options["train_genes"] is None
+                or learn_options["test_genes"] is None
             ):
                 raise AssertionError("use both or neither")
             for i, gene in enumerate(learn_options["test_genes"]):
@@ -248,8 +248,8 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
                     np.unique(np.unique(y_all["Target gene"][train]))
                 )
                 genes_to_keep = unique_genes[
-                                0 : len(unique_genes) - learn_options["num_genes_remove_train"]
-                                ]
+                    0 : len(unique_genes) - learn_options["num_genes_remove_train"]
+                ]
                 filtered_train = []
                 for j, gene in enumerate(y_all["Target gene"]):
                     if j in train and gene in genes_to_keep:

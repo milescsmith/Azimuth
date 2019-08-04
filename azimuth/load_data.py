@@ -399,9 +399,7 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
     _, gene_position1, target_genes1, x_df1, y_df1 = read_V1_data(
         data_file, learn_options
     )
-    x_df2, _, target_genes2, y_df2, gene_position2 = read_V2_data(
-        data_file2
-    )
+    x_df2, _, target_genes2, y_df2, gene_position2 = read_V2_data(data_file2)
 
     y_df1.rename(
         columns={"average rank": learn_options["rank-transformed target name"]},
@@ -489,16 +487,12 @@ def mergeV1_V2(data_file: str, data_file2: str, learn_options: dict) -> tuple:
 
 
 def get_V1_genes(data_file=None, learn_options: dict = None) -> np.ndarray:
-    _, _, target_genes, _, _ = read_V1_data(
-        data_file, learn_options
-    )
+    _, _, target_genes, _, _ = read_V1_data(data_file, learn_options)
     return target_genes
 
 
 def get_V2_genes(data_file: str = None) -> np.ndarray:
-    _, _, target_genes, _, _ = read_V2_data(
-        data_file, verbose=False
-    )
+    _, _, target_genes, _, _ = read_V2_data(data_file, verbose=False)
     return target_genes
 
 
@@ -510,18 +504,12 @@ def get_V3_genes(data_fileV1: str = None, data_fileV2: str = None) -> np.ndarray
 
 
 def get_mouse_genes(data_file: str = None) -> np.ndarray:
-    _, _, _, x_df, _ = read_V1_data(
-        data_file, learn_options=None
-    )
+    _, _, _, x_df, _ = read_V1_data(data_file, learn_options=None)
     return x_df[x_df["Organism"] == "mouse"]["Target gene"].unique()
 
 
 def get_human_genes(data_file: str = None) -> np.ndarray:
-    _, _, _, x_df, _ = read_V1_data(
-        data_file, learn_options=None
-    )
+    _, _, _, x_df, _ = read_V1_data(data_file, learn_options=None)
     mouse_genes = x_df[x_df["Organism"] == "mouse"]["Target gene"].unique()
-    all_genes = get_V3_genes(
-        None, None
-    )
+    all_genes = get_V3_genes(None, None)
     return np.setdiff1d(all_genes, mouse_genes)
