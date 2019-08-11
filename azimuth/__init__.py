@@ -1,6 +1,7 @@
 from . import features
 from . import metrics
 from . import models
+
 # from .cli_run_model import main
 from .corrstats import rz_ci, rho_rxy_rxz, dependent_corr, independent_corr
 from .load_data import (
@@ -84,4 +85,11 @@ from .util import (
     extract_feature_from_model,
     extract_feature_from_model_sum,
     feature_importances,
+)
+
+__author__ = ("Nicolo Fusi", "Jennifer Listgarten", "Miles Smith")
+__email__ = (
+    "fusi@microsoft.com",
+    "jennl@microsoft.com",
+    "mileschristiansmith@gmail.com",
 )

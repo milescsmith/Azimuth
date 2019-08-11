@@ -156,11 +156,12 @@ def cross_validate(y_all, feature_sets, learn_options=None, TEST=False, CV=True)
     if learn_options["method"] not in allowed_methods:
         raise AssertionError("invalid method: {learn_options['method']}")
     if (
-        learn_options["method"] != "linreg"
-        or learn_options["penalty"] != "L2"
-        and learn_options["weighted"] is not None
-    ):
-        raise AssertionError("weighted only works with linreg L2 right now")
+        learn_options["method"] != "linreg" or learn_options["penalty"] != "L2"
+    ) and learn_options["weighted"] is not None:
+        raise AssertionError(
+            f"{learn_options['method']} {learn_options['weighted']} weighted "
+            f"only works with linreg L2 right now"
+        )
 
     # construct filename from options
     filename = construct_filename(learn_options, TEST)

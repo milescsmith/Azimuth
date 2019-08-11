@@ -1,12 +1,13 @@
 from copy import deepcopy
 from math import log10
 from os import path
-from typing import Optional, List, Union, Callable
+from typing import Optional, List, Union, Callable, Dict
 
 import numpy as np
 import pandas as pd
 from dill import load, dump
 from pkg_resources import resource_filename
+from sklearn.ensemble import GradientBoostingRegressor
 
 from .features.featurization import featurize_data
 from .load_data import get_V3_genes, from_file
@@ -306,6 +307,7 @@ def setup(
     pam_audit=True,
     length_audit=True,
 ):
+    print(f"learn_options: {learn_options}")
     num_proc = shared_setup(learn_options, order, test)
 
     if "testing_non_binary_target_name" not in learn_options:
@@ -386,13 +388,13 @@ def run_models(
     """
 
     if isinstance(WD_kernel_degrees, int):
-        WD_kernel_degrees = list(WD_kernel_degrees)
+        WD_kernel_degrees = [WD_kernel_degrees]
     if isinstance(adaboost_learning_rates, float):
-        adaboost_learning_rates = list(adaboost_learning_rates)
+        adaboost_learning_rates = [adaboost_learning_rates]
     if isinstance(adaboost_num_estimators, float):
-        adaboost_num_estimators = list(adaboost_num_estimators)
+        adaboost_num_estimators = [adaboost_num_estimators]
     if isinstance(adaboost_max_depths, int):
-        adaboost_max_depths = list(adaboost_max_depths)
+        adaboost_max_depths = [adaboost_max_depths]
 
     if GP_likelihoods is None:
         GP_likelihoods = ["gaussian", "warped"]
@@ -424,7 +426,8 @@ def run_models(
         )
         if len(learn_options_set) != 1:
             raise AssertionError(
-                "when CV is False, only 1 set of learn options is allowed"
+                f"When CV is False, only 1 set of learn options is allowed.  Instead, "
+                f"{len(learn_options_set)} were given.\n"
             )
         if len(models) != 1:
             raise AssertionError("when CV is False, only 1 model is allowed")
@@ -644,14 +647,14 @@ def save_final_model_V3(
 
 
 def predict(
-    seq,
-    aa_cut=None,
-    percent_peptide=None,
-    model=None,
-    model_file=None,
-    pam_audit=True,
-    length_audit=False,
-    learn_options_override=None,
+    seq: np.ndarray,
+    aa_cut: Optional[np.ndarray] = None,
+    percent_peptide: Optional[np.ndarray] = None,
+    model: Optional[GradientBoostingRegressor] = None,
+    model_file: Optional[str] = None,
+    pam_audit: bool =True,
+    length_audit: bool = False,
+    learn_options_override: Optional[Dict[str]] = None,
 ):
     """
 
@@ -749,6 +752,7 @@ def predict(
     inputs, *_ = concatenate_feature_sets(feature_sets)
 
     # call to scikit-learn, returns a vector of predicted values
+    print("starting scoring")
     preds = model.predict(inputs)
 
     # also check that predictions are not 0/1 from a classifier.predict()
