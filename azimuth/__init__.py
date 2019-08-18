@@ -1,7 +1,11 @@
 from . import features
 from . import metrics
 from . import models
-
+from .__main__ import (
+    score_spacers,
+    regenerate_stored_models,
+    model_comparison
+)
 # from .cli_run_model import main
 from .corrstats import rz_ci, rho_rxy_rxz, dependent_corr, independent_corr
 from .load_data import (

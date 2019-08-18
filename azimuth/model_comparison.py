@@ -18,7 +18,16 @@ from .util import concatenate_feature_sets, convert_to_thirty_one
 DATA_PATH = resource_filename("azimuth", "saved_models/")
 
 
-def set_target(learn_options, classification):
+def set_target(learn_options: Dict[str, str],
+               classification: bool):
+    """Set conditional target learn options
+
+    :param learn_options:typing.Dict[str,str]
+    :param classification:bool
+    :return:typing.Dict[str,str]
+    """
+
+
     if "target_name" in learn_options and learn_options["target_name"] is None:
         raise AssertionError("changed it to be automatically set here")
     if not classification:
@@ -45,7 +54,19 @@ def set_target(learn_options, classification):
     return learn_options
 
 
-def GP_setup(learn_options, likelihood="gaussian", degree=3, set_target_fn=set_target):
+def GP_setup(learn_options: Dict[str,str],
+             likelihood: str = "gaussian",
+             degree: int = 3,
+             set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
+    """
+
+    :param learn_options: typing.Dict[str,str]
+    :param likelihood: str
+    :param degree:
+    :param set_target_fn:
+    :return: typing.Dict[str,str]
+    """
+
     learn_options["method"] = "GPy"
     learn_options["kernel degree"] = degree
 
@@ -58,14 +79,16 @@ def GP_setup(learn_options, likelihood="gaussian", degree=3, set_target_fn=set_t
     return learn_options
 
 
-def SVC_setup(learn_options, set_target_fn=set_target):
+def SVC_setup(learn_options: Dict[str, str],
+              set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options["method"] = "SVC"
     learn_options = set_target_fn(learn_options, classification=True)
 
     return learn_options
 
 
-def L1_setup(learn_options, set_target_fn=set_target):
+def L1_setup(learn_options: Dict[str, str],
+             set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "linreg"
     learn_options["penalty"] = "L1"
@@ -77,7 +100,8 @@ def L1_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def L2_setup(learn_options, set_target_fn=set_target):
+def L2_setup(learn_options: Dict[str, str],
+             set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "linreg"
     learn_options["penalty"] = "L2"
@@ -89,19 +113,22 @@ def L2_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def mean_setup(learn_options, set_target_fn=set_target):
+def mean_setup(learn_options: Dict[str, str],
+               set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "mean"
     return learn_options
 
 
-def random_setup(learn_options, set_target_fn=set_target):
+def random_setup(learn_options,
+                 set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "random"
     return learn_options
 
 
-def elasticnet_setup(learn_options, set_target_fn=set_target):
+def elasticnet_setup(learn_options: Dict[str, str],
+                     set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "linreg"
     learn_options["penalty"] = "EN"
@@ -112,7 +139,8 @@ def elasticnet_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def DNN_setup(learn_options, set_target_fn=set_target):
+def DNN_setup(learn_options: Dict[str, str],
+              set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "DNN"
     learn_options["DNN target variable"] = "score"  # 'score_drug_gene_quantized'
@@ -120,25 +148,29 @@ def DNN_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def RF_setup(learn_options, set_target_fn=set_target):
+def RF_setup(learn_options: Dict[str, str],
+             set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "RandomForestRegressor"
     return learn_options
 
 
-def doench_setup(learn_options, set_target_fn=set_target):
+def doench_setup(learn_options: Dict[str, str],
+                 set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=True)
     learn_options["method"] = "doench"
     return learn_options
 
 
-def sgrna_from_doench_setup(learn_options, set_target_fn=set_target):
+def sgrna_from_doench_setup(learn_options: Dict[str, str],
+                            set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "sgrna_from_doench"
     return learn_options
 
 
-def linreg_setup(learn_options, set_target_fn=set_target):
+def linreg_setup(learn_options: Dict[str, str],
+                 set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options["method"] = "linreg"
     learn_options["penalty"] = None
     learn_options["feature_select"] = False
@@ -150,7 +182,8 @@ def linreg_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def logregL1_setup(learn_options, set_target_fn=set_target):
+def logregL1_setup(learn_options: Dict[str, str],
+                   set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=True)
     learn_options["method"] = "logregL1"
     learn_options["penalty"] = "L1"
@@ -162,7 +195,8 @@ def logregL1_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def LASSOs_ensemble_setup(learn_options, set_target_fn=set_target):
+def LASSOs_ensemble_setup(learn_options: Dict[str, str],
+                          set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=False)
     learn_options["method"] = "lasso_ensemble"
     learn_options["penalty"] = "L1"
@@ -174,7 +208,8 @@ def LASSOs_ensemble_setup(learn_options, set_target_fn=set_target):
     return learn_options
 
 
-def xu_et_al_setup(learn_options, set_target_fn=set_target):
+def xu_et_al_setup(learn_options: Dict[str, str],
+                   set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target):
     learn_options = set_target_fn(learn_options, classification=True)
     learn_options["method"] = "xu_et_al"
 
@@ -182,11 +217,11 @@ def xu_et_al_setup(learn_options, set_target_fn=set_target):
 
 
 def adaboost_setup(
-    learn_options,
+    learn_options: Dict[str, str],
     num_estimators=100,
     max_depth=3,
     learning_rate=0.1,
-    set_target_fn=set_target,
+    set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target,
     model="AdaBoost",
 ):
     """
@@ -223,7 +258,9 @@ def adaboost_setup(
     return learn_options
 
 
-def shared_setup(learn_options, order, test):
+def shared_setup(learn_options: Dict[str, str],
+                 order,
+                 test):
     if "num_proc" not in learn_options:
         learn_options["num_proc"] = None
     if "num_thread_per_proc" not in learn_options:
@@ -302,7 +339,7 @@ def shared_setup(learn_options, order, test):
 def setup(
     test=False,
     order=1,
-    learn_options=None,
+    learn_options: Optional[Dict[str, str]] = None,
     data_file=None,
     pam_audit=True,
     length_audit=True,
@@ -378,7 +415,7 @@ def run_models(
     test: bool = False,
     adaboost_CV: bool = True,
     setup_function: Callable = setup,
-    set_target_fn: Callable = set_target,
+    set_target_fn: Callable[[Dict[str, str], bool], Dict[str, str]] = set_target,
     pam_audit: bool = True,
     length_audit: bool = True,
 ):
@@ -448,7 +485,7 @@ def run_models(
                         learn_options=partial_learn_opt,
                         pam_audit=pam_audit,
                         length_audit=length_audit,
-                    )  # TODO precompute features for all orders, as this is repated for each model
+                    )  # TODO precompute features for all orders, as this is repeated for each model
 
                     if model == "L1":
                         learn_options_model = L1_setup(
@@ -580,12 +617,12 @@ def run_models(
 
 
 def save_final_model_V3(
-    filename=None,
-    include_position=True,
-    learn_options=None,
-    short_name="final",
-    pam_audit=True,
-    length_audit=True,
+    filename: str = None,
+    include_position: bool = True,
+    learn_options: Optional[Dict[str, str]] = None,
+    short_name: str = "final",
+    pam_audit: bool = True,
+    length_audit: bool = True,
 ):
     """
     run_models(produce_final_model=True) is what saves the model
@@ -652,9 +689,9 @@ def predict(
     percent_peptide: Optional[np.ndarray] = None,
     model: Optional[GradientBoostingRegressor] = None,
     model_file: Optional[str] = None,
-    pam_audit: bool =True,
+    pam_audit: bool = True,
     length_audit: bool = False,
-    learn_options_override: Optional[Dict[str]] = None,
+    learn_options_override: Optional[Dict[str, str]] = None,
 ):
     """
 
@@ -763,7 +800,8 @@ def predict(
     return preds
 
 
-def override_learn_options(learn_options_override, learn_options):
+def override_learn_options(learn_options_override: Optional[Dict[str, str]],
+                           learn_options: Dict[str, str]):
     """
     override all keys seen in learn_options_override to alter learn_options
     """
@@ -773,7 +811,8 @@ def override_learn_options(learn_options_override, learn_options):
     return learn_options
 
 
-def fill_learn_options(learn_options_used_to_fill, learn_options_with_possible_missing):
+def fill_learn_options(learn_options_used_to_fill: Optional[Dict[str, str]],
+                       learn_options_with_possible_missing: Dict[str, str]):
     """
     only fill in keys that are missing from learn_options from learn_options_fill
     """
@@ -784,7 +823,8 @@ def fill_learn_options(learn_options_used_to_fill, learn_options_with_possible_m
     return learn_options_with_possible_missing
 
 
-def write_results(predictions, file_to_predict):
+def write_results(predictions,
+                  file_to_predict: str):
     newfile = file_to_predict.replace(".csv", ".pred.csv")
     data = pd.read_csv(file_to_predict)
     data["predictions"] = predictions

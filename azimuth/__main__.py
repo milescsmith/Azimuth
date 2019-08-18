@@ -2,9 +2,12 @@ import os
 from typing import Optional, Dict
 
 import click
+import numpy as np
+import pandas as pd
 from dill import load, dump
+from sklearn.ensemble import GradientBoostingRegressor
 
-from .model_comparison import run_models, save_final_model_V3
+from .model_comparison import run_models, save_final_model_V3, predict
 
 
 @click.group()
@@ -100,10 +103,11 @@ def model_comparison(
 @click.option("--short_name", default=None, required=False, type=str)
 @click.option("--pam_audit", default=False, is_flag=True, type=bool)
 @click.option("--length_audit", default=False, is_flag=True, type=bool)
+@click.help_option()
 def regenerate_stored_models(
     filename: str,
     include_position: bool,
-    learn_options: Optional[Dict[str]],
+    learn_options: Optional[Dict[str, str]],
     short_name: str,
     pam_audit: bool,
     length_audit: bool,
@@ -111,6 +115,78 @@ def regenerate_stored_models(
     save_final_model_V3(
         filename, include_position, learn_options, short_name, pam_audit, length_audit
     )
+
+
+@main.command()
+@click.option(
+    "--seq",
+    help="Sequence(s) to score.  If passing several sequences, enclose them "
+    "all in quotations.",
+    required=False,
+    type=str,
+)
+@click.option(
+    "--model",
+    help="model instance to use for prediction",
+    required=False,
+    type=GradientBoostingRegressor,
+)
+@click.option(
+    "--model_file",
+    help=" file name of pickled model to use for prediction",
+    required=False,
+    type=str,
+)
+@click.option(
+    "--pam_audit",
+    help="Enables checking the PAM of each sequence",
+    required=False,
+    is_flag=True,
+    type=bool,
+)
+@click.option(
+    "--length_audit",
+    help="Enables checking the length of each sequences",
+    required=False,
+    is_flag=True,
+    type=bool,
+)
+@click.option(
+    "--learn_options_override",
+    help="a dictionary indicating which learn_options to override",
+    required=False,
+    type=Dict[str, str],
+)
+@click.option(
+    "--print_scores", "-p", help="print scores", required=False, is_flag=True, type=bool
+)
+@click.help_option()
+def score_spacers(
+    seq: str,
+    model: Optional[GradientBoostingRegressor] = None,
+    model_file: Optional[str] = None,
+    pam_audit: bool = True,
+    length_audit: bool = False,
+    learn_options_override: Optional[Dict[str, str]] = None,
+    print_scores: bool = False,
+) -> np.ndarray:
+
+    if isinstance(seq, str):
+        seq = np.array(seq.split())
+    scores = predict(
+        seq=seq,
+        aa_cut=None,
+        percent_peptide=None,
+        model=model,
+        model_file=model_file,
+        pam_audit=pam_audit,
+        length_audit=length_audit,
+        learn_options_override=learn_options_override,
+    )
+    if print_scores:
+        scores_df = pd.DataFrame({"sequence": seq, "score": scores})
+        print(scores_df)
+    return scores
 
 
 if __name__ == "__main__":
