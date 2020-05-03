@@ -692,6 +692,7 @@ def predict(
     pam_audit: bool = True,
     length_audit: bool = False,
     learn_options_override: Optional[Dict[str, str]] = None,
+    verbose: bool = False,
 ):
     """
 
@@ -706,6 +707,8 @@ def predict(
     pam_audit : check PAM of each sequence.
     length_audit : check length of each sequence.
     learn_options_override : a dictionary indicating which learn_options to override (optional).
+    verbose : bool
+        display extra information
 
     Return
     ------
@@ -742,10 +745,12 @@ def predict(
         if np.any(percent_peptide == -1) or (
             percent_peptide is None and aa_cut is None
         ):
-            print("No model file specified, using V3_model_nopos")
+            if verbose:
+                print("No model file specified, using V3_model_nopos")
             model_name = "V3_model_nopos.pickle"
         else:
-            print("No model file specified, using V3_model_full")
+            if verbose:
+                print("No model file specified, using V3_model_full")
             model_name = "V3_model_full.pickle"
 
         model_file = path.join(DATA_PATH, model_name)
@@ -789,7 +794,6 @@ def predict(
     inputs, *_ = concatenate_feature_sets(feature_sets)
 
     # call to scikit-learn, returns a vector of predicted values
-    print("starting scoring")
     preds = model.predict(inputs)
 
     # also check that predictions are not 0/1 from a classifier.predict()
