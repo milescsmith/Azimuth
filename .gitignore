@@ -63,3 +63,4 @@ target/
 .idea/Azimuth.iml
 .dmypy.json
 .DS_Store
+.vscode/
